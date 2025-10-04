@@ -6,7 +6,7 @@ from utils import (
     generate_app_code,
     create_or_update_repo,
     update_readme,
-    notify_evaluation_api
+    notify_evaluation_api,
 )
 
 app = Flask(__name__)

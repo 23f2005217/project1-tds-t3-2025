@@ -70,7 +70,7 @@ The README should include:
 Make it clear, professional, and well-structured with proper markdown formatting."""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gemini-2.5-flash",
         messages=[
             {"role": "system", "content": "You are an expert at writing professional technical documentation."},
             {"role": "user", "content": prompt}
