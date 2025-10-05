@@ -11,12 +11,12 @@ This project implements an automated workflow for building and deploying web app
 
 ## Features
 
--  **LLM-Powered Code Generation**: Uses OpenAI GPT-4 to generate complete web applications
--  **Automated GitHub Deployment**: Creates repositories, manages code, and enables GitHub Pages
--  **Multi-Round Support**: Handles initial build and subsequent revision requests
--  **Secret Verification**: Validates requests with a secret key
--  **Professional Documentation**: Auto-generates README files and includes MIT License
--  **Retry Logic**: Ensures evaluation API notifications with exponential backoff
+- **LLM-Powered Code Generation**: Uses OpenAI GPT-4 to generate complete web applications
+- **Automated GitHub Deployment**: Creates repositories, manages code, and enables GitHub Pages
+- **Multi-Round Support**: Handles initial build and subsequent revision requests
+- **Secret Verification**: Validates requests with a secret key
+- **Professional Documentation**: Auto-generates README files and includes MIT License
+- **Retry Logic**: Ensures evaluation API notifications with exponential backoff
 
 ## Setup Instructions
 
@@ -47,23 +47,26 @@ cp .env.example .env
 Edit `.env` and set:
 
 - `GITHUB_TOKEN`: Your GitHub Personal Access Token
-  - Create at: https://github.com/settings/tokens
-  - Required scopes: `repo`, `workflow`, `admin:repo_hook`
+  - Create at: <https://github.com/settings/personal-access-tokens/new>  - Required scopes: `repo`, `workflow`, `admin:repo_hook`
 - `GITHUB_USERNAME`: Your GitHub username
-- `OPENAI_API_KEY`: Your OpenAI API key
-  - Get from: https://platform.openai.com/api-keys
+- `OPENAI_API_KEY`: Your GEMINI API key
+  - Get from: <https://aistudio.google.com/api-keys>
+  - Watch how to create one: <https://youtu.be/6BRyynZkvf0>
 - `SECRET`: Your secret key for request verification
 - `PORT`: (Optional) Server port, defaults to 5000
 
 ### 4. GitHub Personal Access Token Setup
 
-1. Go to https://github.com/settings/tokens/new
+1. Go to <https://github.com/settings/tokens/new>
 2. Give it a descriptive name (e.g., "LLM Deployment System")
 3. Select scopes:
-   -  `repo` (Full control of private repositories)
-   -  `workflow` (Update GitHub Action workflows)
-   -  `admin:repo_hook` (Manage repository webhooks)
+   - `repo` (Full control of private repositories)
+   - `workflow` (Update GitHub Action workflows)
+   - `admin:repo_hook` (Manage repository webhooks)
 4. Click "Generate token" and copy it to your `.env` file
+
+![Access Token](.github/assets/access_token.png)
+![Permissions](.github/assets/permissions.png)
 
 ### 5. Verify Configuration
 
@@ -74,6 +77,7 @@ uv run check_config.py
 ```
 
 This will:
+
 - Check if all required environment variables are set
 - Validate your GitHub token by authenticating
 - Validate your OpenAI API key
@@ -172,7 +176,7 @@ curl http://localhost:5000/api-endpoint \
 
 ### Core Components
 
-1. **Request Handler** (`handle_request`): 
+1. **Request Handler** (`handle_request`):
    - Validates incoming requests
    - Orchestrates the entire build/revise workflow
    - Returns appropriate HTTP responses
@@ -265,10 +269,10 @@ The system automatically handles Round 2 requests:
 
 ## Security Considerations
 
--  Secret verification prevents unauthorized access
--  No secrets stored in git history
--  Environment variables for sensitive data
--  `.env` file excluded from git (add to `.gitignore`)
+- Secret verification prevents unauthorized access
+- No secrets stored in git history
+- Environment variables for sensitive data
+- `.env` file excluded from git (add to `.gitignore`)
 
 ## Error Handling
 
@@ -280,6 +284,7 @@ The system automatically handles Round 2 requests:
 ## Dependencies
 
 Core libraries:
+
 - `flask`: Web framework for API endpoint
 - `openai`: LLM integration for code generation
 - `pygithub`: GitHub API client
@@ -301,28 +306,33 @@ MIT License - see LICENSE file for details
 ## Troubleshooting
 
 ### GitHub Token Issues
+
 - Ensure all required scopes are enabled
 - Token must have `repo` access for public repositories
 - Verify token hasn't expired
 
 ### OpenAI API Issues
+
 - Check API key is valid and has credits
 - Verify internet connectivity
 - Review rate limits on your OpenAI account
 
 ### GitHub Pages Not Deploying
+
 - Wait 1-2 minutes after creation
 - Check repository settings → Pages section
 - Ensure repository is public
 - Verify `index.html` exists in main branch
 
 ### Port Already in Use
+
 - Change `PORT` in `.env` file
 - Or kill the process using: `lsof -ti:5000 | xargs kill -9`
 
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review error messages in console output
 3. Verify all environment variables are set correctly
