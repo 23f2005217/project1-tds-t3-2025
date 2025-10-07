@@ -1,13 +1,55 @@
 from typing import Dict, Optional
 import requests
+import time
 from github import GithubException
 from .config import get_github_client, GITHUB_USERNAME, GITHUB_TOKEN
 from .code_generator import generate_readme as generate_readme_content
 
+
+def get_existing_code(task: str, path: str = "index.html") -> Optional[str]:
+    try:
+        github_client = get_github_client()
+        user = github_client.get_user()
+        
+        try:
+            repo = user.get_repo(task)
+        except GithubException as e:
+            if e.status == 404:
+                print(f"Repository '{task}' not found (this is OK for first time)")
+                return None
+            elif e.status == 403:
+                print(f"Permission denied accessing repository '{task}'")
+                return None
+            else:
+                print(f"Error accessing repository '{task}': {str(e)}")
+                return None
+
+        try:
+            contents = repo.get_contents(path, ref="main")
+            if hasattr(contents, "decoded_content"):
+                decoded = contents.decoded_content.decode("utf-8")
+                print(f"Successfully retrieved {path} from {task} (size: {len(decoded)} chars)")
+                return decoded
+            else:
+                print(f"File {path} exists but has no content")
+                return None
+        except GithubException as e:
+            if e.status == 404:
+                print(f"File '{path}' not found in repository '{task}' (this is OK)")
+                return None
+            else:
+                print(f"Error fetching {path} from {task}: {str(e)}")
+                return None
+                
+    except Exception as e:
+        print(f"Unexpected error fetching existing code from {task}: {str(e)}")
+        return None
+
+
 def get_mit_license() -> str:
     year = "2025"
     name = GITHUB_USERNAME or "Student"
-    
+
     return f"""MIT License
 
 Copyright (c) {year} {name}
@@ -32,7 +74,9 @@ SOFTWARE.
 """
 
 
-def create_or_update_repo(task: str, code_files: Dict[str, str], round_num: int) -> Dict[str, str]:
+def create_or_update_repo(
+    task: str, code_files: Dict[str, str], round_num: int
+) -> Dict[str, str]:
     try:
         github_client = get_github_client()
         user = github_client.get_user()
@@ -41,69 +85,119 @@ def create_or_update_repo(task: str, code_files: Dict[str, str], round_num: int)
         print("Please check your GITHUB_TOKEN in .env file")
         raise
 
-    repo_name = f"{task}-round-{round_num}"
+    repo_name = task
     owner = user.login
 
+    repo = None
     existing_repo = None
     try:
         existing_repo = user.get_repo(repo_name)
-        print(f"Repository {repo_name} already exists, updating...")
-    except GithubException:
-        print(f"Creating new repository {repo_name}...")
-
-    if existing_repo is None:
-        repo = user.create_repo(
-            name=repo_name,
-            description=f"Generated app for task: {task}",
-            private=False,
-            auto_init=False
+        print(
+            f"Repository {repo_name} already exists, updating for round {round_num}..."
         )
-
-        repo.create_file(
-            path="LICENSE",
-            message="Add MIT License",
-            content=get_mit_license()
-        )
-
-        repo.create_file(
-            path="README.md",
-            message="Add README",
-            content=f"# {task}\n\nGenerated application for {task}"
-        )
-    else:
         repo = existing_repo
+    except GithubException as e:
+        if e.status == 404:
+            print(f"Creating new repository {repo_name}...")
+            try:
+                repo = user.create_repo(
+                    name=repo_name,
+                    description=f"Generated app for task: {task}",
+                    private=False,
+                    auto_init=False,
+                )
+                print(f"Repository {repo_name} created successfully")
 
-    index_content = code_files.get("index.html", "<html><body><h1>Welcome</h1></body></html>")
-    
-    upsert_pages_index(
-        owner=owner,
-        repo_name=repo_name,
-        html=index_content,
-        branch="main",
-        path="index.html",
-        commit_msg=f"Deploy app for round {round_num}"
+                try:
+                    repo.create_file(
+                        path="LICENSE",
+                        message="Add MIT License",
+                        content=get_mit_license(),
+                    )
+                    print("LICENSE file created")
+                except GithubException as license_error:
+                    if license_error.status == 422:
+                        print("LICENSE already exists, skipping...")
+                    else:
+                        print(f"Warning: Could not create LICENSE: {str(license_error)}")
+
+                try:
+                    repo.create_file(
+                        path="README.md",
+                        message="Add README",
+                        content=f"# {task}\n\nGenerated application for {task}",
+                    )
+                    print("README.md created")
+                except GithubException as readme_error:
+                    if readme_error.status == 422:
+                        print("README.md already exists, will be updated later...")
+                    else:
+                        print(f"Warning: Could not create README: {str(readme_error)}")
+
+            except GithubException as create_error:
+                if (
+                    create_error.status == 422
+                    and "name already exists" in str(create_error).lower()
+                ):
+                    print(
+                        f"Repository {repo_name} was just created by another process, fetching it..."
+                    )
+                    try:
+                        repo = user.get_repo(repo_name)
+                    except GithubException as fetch_error:
+                        raise RuntimeError(
+                            f"Repository creation race condition: cannot fetch {repo_name} after failed create. {str(fetch_error)}"
+                        )
+                else:
+                    raise RuntimeError(f"Failed to create repository: {str(create_error)}")
+        else:
+            raise RuntimeError(f"Failed to check repository existence: {str(e)}")
+
+    if repo is None:
+        raise RuntimeError(f"Failed to get or create repository {repo_name}")
+
+    index_content = code_files.get(
+        "index.html", "<html><body><h1>Welcome</h1></body></html>"
     )
 
-    commits = repo.get_commits()
-    latest_commit_sha = commits[0].sha
+    try:
+        upsert_pages_index(
+            owner=owner,
+            repo_name=repo_name,
+            html=index_content,
+            branch="main",
+            path="index.html",
+            commit_msg=f"Deploy app for round {round_num}",
+        )
+    except Exception as e:
+        print(f"Error during Pages setup: {str(e)}")
+        print("Continuing despite Pages setup issues (file should be uploaded)...")
+
+    try:
+        commits = repo.get_commits()
+        latest_commit_sha = commits[0].sha
+    except Exception as e:
+        print(f"Warning: Could not fetch latest commit: {str(e)}")
+        latest_commit_sha = "unknown"
+
     pages_url = f"https://{owner}.github.io/{repo_name}/"
 
     return {
         "repo_url": repo.html_url,
         "commit_sha": latest_commit_sha,
         "pages_url": pages_url,
-        "repo": repo
+        "repo": repo,
     }
 
 
-
-
-def upsert_pages_index(owner: str,
-                       repo_name: str,
-                       html: str,
-                       branch: str = "main",
-                       path: str = "index.html",
-                       commit_msg: Optional[str] = None) -> None:
+def upsert_pages_index(
+    owner: str,
+    repo_name: str,
+    html: str,
+    branch: str = "main",
+    path: str = "index.html",
+    commit_msg: Optional[str] = None,
+) -> None:
     commit_msg = commit_msg or f"Update {path} for GitHub Pages"
 
     gh = get_github_client()
@@ -138,47 +232,127 @@ def upsert_pages_index(owner: str,
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    r = requests.get(f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs)
-    if r.status_code == 404:
-        body = {"source": {"branch": branch, "path": "/"}}
-        cr = requests.post(f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, json=body)
-        if cr.status_code not in (201, 202):
-            raise RuntimeError(f"Failed to create Pages site: {cr.status_code} {cr.text}")
-        print("Pages site created")
-    elif r.ok:
-        body = {"source": {"branch": branch, "path": "/"}}
-        pr = requests.patch(f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, json=body)
-        if pr.status_code not in (200, 202):
-            raise RuntimeError(f"Failed to update Pages config: {pr.status_code} {pr.text}")
-        print("Pages site updated")
-    else:
-        raise RuntimeError(f"Failed to query Pages site: {r.status_code} {r.text}")
+    max_retries = 3
+    retry_delay = 2 
+    
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, timeout=10)
+            
+            if r.status_code == 404:
+                print(f"GitHub Pages not found, creating (attempt {attempt + 1}/{max_retries})...")
+                body = {"source": {"branch": branch, "path": "/"}}
+                cr = requests.post(
+                    f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, json=body, timeout=10
+                )
+                
+                if cr.status_code in (201, 202):
+                    print("Pages site created successfully")
+                    break
+                elif cr.status_code == 409:
+                    print("Pages site already exists (409), continuing...")
+                    break
+                elif cr.status_code == 403:
+                    print(f"Permission denied (403). Pages might be disabled for this repo. Details: {cr.text}")
+                    break
+                else:
+                    error_msg = f"Failed to create Pages site: {cr.status_code} {cr.text}"
+                    if attempt < max_retries - 1:
+                        print(f"{error_msg}. Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"Warning: {error_msg}. File uploaded but Pages setup incomplete.")
+                        break
+                        
+            elif r.status_code == 200:
+                print(f"Updating existing Pages configuration (attempt {attempt + 1}/{max_retries})...")
+                body = {"source": {"branch": branch, "path": "/"}}
+                pr = requests.patch(
+                    f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, json=body, timeout=10
+                )
+                
+                if pr.status_code in (200, 202, 204):
+                    print("Pages site updated successfully")
+                    break
+                elif pr.status_code == 404:
+                    print("Pages deleted between checks, will retry creation...")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print("Warning: Could not update Pages config after retries. File is uploaded.")
+                        break
+                elif pr.status_code == 403:
+                    print(f"Permission denied (403). Pages might be disabled. Details: {pr.text}")
+                    break
+                else:
+                    error_msg = f"Failed to update Pages config: {pr.status_code} {pr.text}"
+                    if attempt < max_retries - 1:
+                        print(f"{error_msg}. Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"Warning: {error_msg}. File uploaded but Pages update incomplete.")
+                        break
+                        
+            elif r.status_code == 403:
+                print(f"Permission denied (403) when checking Pages status. Pages might be disabled. Details: {r.text}")
+                break
+            elif r.status_code == 401:
+                raise RuntimeError(f"Authentication failed (401). Please check GITHUB_TOKEN. Details: {r.text}")
+            else:
+                error_msg = f"Unexpected response when querying Pages site: {r.status_code} {r.text}"
+                if attempt < max_retries - 1:
+                    print(f"{error_msg}. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(f"Warning: {error_msg}. File uploaded but Pages status unclear.")
+                    break
+                    
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                print(f"Request timeout (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                continue
+            else:
+                print("Warning: Request timeout after retries. File uploaded but Pages status unclear.")
+                break
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                print(f"Request error: {str(e)} (attempt {attempt + 1}/{max_retries}). Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                continue
+            else:
+                print(f"Warning: Request error after retries: {str(e)}. File uploaded but Pages status unclear.")
+                break
 
-    br = requests.post(f"{base}/repos/{owner}/{repo_name}/pages/builds", headers=hdrs)
-    if br.status_code not in (201, 202):
-        print(f"Pages build request returned {br.status_code}: {br.text}")
-    else:
-        print("Pages build requested")
+    try:
+        br = requests.post(f"{base}/repos/{owner}/{repo_name}/pages/builds", headers=hdrs, timeout=10)
+        if br.status_code in (201, 202):
+            print("Pages build requested successfully")
+        else:
+            print(f"Pages build request returned {br.status_code}: {br.text} (non-critical)")
+    except Exception as e:
+        print(f"Could not request Pages build (non-critical): {str(e)}")
 
 
 def update_readme(repo, task: str, brief: str, repo_url: str, pages_url: str):
     readme_content = generate_readme_content(task, brief, repo_url, pages_url)
-    
+
     try:
         readme_file = repo.get_contents("README.md")
         repo.update_file(
             path="README.md",
             message="Update README",
             content=readme_content,
-            sha=readme_file.sha
+            sha=readme_file.sha,
         )
     except GithubException:
-        repo.create_file(
-            path="README.md",
-            message="Add README",
-            content=readme_content
-        )
-    
+        repo.create_file(path="README.md", message="Add README", content=readme_content)
+
+
 def test_github_manager():
     print("Testing GitHub Manager...")
     try:
@@ -191,9 +365,7 @@ def test_github_manager():
 
     task = "test-task"
     round_num = 1
-    code_files = {
-        "index.html": "<html><body><h1>Test App</h1></body></html>"
-    }
+    code_files = {"index.html": "<html><body><h1>Test App</h1></body></html>"}
 
     try:
         repo_info = create_or_update_repo(task, code_files, round_num)
@@ -201,7 +373,13 @@ def test_github_manager():
         print(f"Pages URL: {repo_info['pages_url']}")
         print(f"Latest Commit SHA: {repo_info['commit_sha']}")
 
-        update_readme(repo_info["repo"], task, "This is a test brief.", repo_info["repo_url"], repo_info["pages_url"])
+        update_readme(
+            repo_info["repo"],
+            task,
+            "This is a test brief.",
+            repo_info["repo_url"],
+            repo_info["pages_url"],
+        )
         print("README updated successfully.")
     except Exception as e:
         print(f"Error during repository operations: {str(e)}")

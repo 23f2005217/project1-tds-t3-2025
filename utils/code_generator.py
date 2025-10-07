@@ -3,37 +3,47 @@ from typing import Dict
 from .config import get_openai_client
 
 
-def generate_app_code(brief: str, checks: list, attachments: list = None) -> Dict[str, str]:
+def generate_app_code(brief: str, checks: list, attachments: list = None, existing_code: str = None, round_num: int = 1) -> Dict[str, str]:
     client = get_openai_client()
     
     attachments_info = ""
     if attachments:
-        attachments_info = "\n\nAttachments:\n"
+        attachments_info = "\n\nAttachments (data URIs to embed):\n"
         for att in attachments:
-            attachments_info += f"- {att.get('name', 'unknown')}\n"
+            name = att.get('name', 'unknown')
+            url = att.get('url', '')
+            attachments_info += f"- {name}: {url[:100]}...\n"
     
-    prompt = f"""Generate a complete, minimal single-page web application based on this brief:
+    existing_context = ""
+    if existing_code and round_num > 1:
+        existing_context = f"""\n\nEXISTING CODE FROM ROUND {round_num - 1}:\n```html\n{existing_code}\n```\n\nIMPORTANT: Modify and enhance the existing code above according to the new brief below. Preserve all working functionality from previous rounds unless the brief explicitly asks to change it.\n"""
+    
+    prompt = f"""Generate a complete, minimal single-page web application based on this brief:{existing_context}
 
 Brief: {brief}
 
-Evaluation Checks:
+Evaluation Checks (must all pass):
 {chr(10).join(['- ' + check for check in checks])}
 {attachments_info}
 
-Requirements:
+Critical Requirements:
 1. Create a single HTML file with embedded CSS and JavaScript
-2. The app should be fully functional and deployable to GitHub Pages
-3. Include error handling and user feedback
-4. Make it visually clean and professional
-5. Handle URL parameters as specified in the brief
-6. The HTML should be complete and ready to deploy
+2. The app must satisfy ALL evaluation checks listed above
+3. If attachments are provided as data URIs, embed them directly in the HTML
+4. Handle URL parameters (e.g., ?url=, ?token=) as specified in the brief
+5. Use CDN links for external libraries (Bootstrap, marked, highlight.js, etc.)
+6. Include proper error handling and user feedback
+7. Make it visually clean and professional
+8. Ensure all required element IDs match the checks exactly
+9. The HTML should be complete, valid, and ready to deploy to GitHub Pages
+10. Test that all JavaScript functionality works correctly
 
-Return ONLY the HTML code, no explanations."""
+Return ONLY the complete HTML code with no explanations, no comments, no markdown formatting."""
 
     response = client.chat.completions.create(
         model="gemini-2.5-flash",
         messages=[
-            {"role": "system", "content": "You are an expert web developer. Generate clean, functional, production-ready HTML applications."},
+            {"role": "system", "content": "You are an expert web developer. Generate clean, functional, production-ready HTML applications that pass all specified checks."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7
