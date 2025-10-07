@@ -14,15 +14,16 @@ app = Flask(__name__)
 
 @app.route('/api-endpoint', methods=['POST'])
 def handle_request():
+    data = None
     try:
         data = request.get_json()
         
         if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
+            return jsonify({"status": "error", "message": "No JSON data provided"}), 400
         
         is_valid, message = validate_request(data)
         if not is_valid:
-            return jsonify({"error": message}), 400
+            return jsonify({"status": "error", "message": message}), 400
         
         email = data["email"]
         task = data["task"]
@@ -35,8 +36,17 @@ def handle_request():
         
         print(f"Processing request for {email}, task: {task}, round: {round_num}")
         
+        existing_code = None
+        if round_num > 1:
+            try:
+                from utils.github_manager import get_existing_code
+                existing_code = get_existing_code(task)
+                print(f"Fetched existing code from Round {round_num - 1}")
+            except Exception as e:
+                print(f"Warning: Could not fetch existing code: {str(e)}")
+        
         print("Generating app code with LLM...")
-        code_files = generate_app_code(brief, checks, attachments)
+        code_files = generate_app_code(brief, checks, attachments, existing_code, round_num)
         
         print("Creating/updating GitHub repository...")
         repo_info = create_or_update_repo(task, code_files, round_num)
@@ -58,21 +68,39 @@ def handle_request():
         }
         
         print("Notifying evaluation API...")
-        notify_evaluation_api(evaluation_url, eval_data)
+        notify_result = notify_evaluation_api(evaluation_url, eval_data)
         
-        return jsonify({
+        response_data = {
             "status": "success",
-            "message": f"Successfully processed round {round_num}",
             "repo_url": repo_info["repo_url"],
             "pages_url": repo_info["pages_url"],
             "commit_sha": latest_commit_sha
-        }), 200
+        }
+        
+        if not notify_result:
+            response_data["warning"] = "Failed to notify evaluation API after retries"
+        
+        return jsonify(response_data), 200
         
     except Exception as e:
         print(f"Error processing request: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+        
+        error_response = {
+            "status": "error",
+            "message": str(e)
+        }
+        
+        if data and all(k in data for k in ["email", "task", "round", "nonce"]):
+            error_response.update({
+                "email": data["email"],
+                "task": data["task"],
+                "round": data["round"],
+                "nonce": data["nonce"]
+            })
+        
+        return jsonify(error_response), 500
 
 
 @app.route('/health', methods=['GET'])

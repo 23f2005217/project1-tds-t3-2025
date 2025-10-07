@@ -13,7 +13,7 @@ SECRET = os.getenv("SECRET", "your_secret_key_here")
 test_request_calculator = {
     "email": "test@example.com",
     "secret": SECRET,
-    "task": "test-calculator-app",
+    "task": "calculator-app-xyz789",
     "round": 1,
     "nonce": "test-nonce-123456",
     "brief": "Create a simple calculator web app that can perform basic arithmetic operations (addition, subtraction, multiplication, division). The interface should be clean and user-friendly with buttons for numbers 0-9 and operation symbols. Display the result clearly.",
