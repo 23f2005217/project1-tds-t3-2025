@@ -52,9 +52,7 @@ def handle_request():
             except Exception as e:
                 print(f"Warning: Could not fetch existing code: {str(e)}")
                 print("Continuing without existing code (generating fresh)...")
-                # Don't fail here - we can proceed without existing code
         
-        # Generate new code
         current_step = "generating code"
         print("Generating app code with LLM...")
         try:

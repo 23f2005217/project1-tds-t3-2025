@@ -42,7 +42,6 @@ def get_existing_code(task: str, path: str = "index.html") -> Optional[str]:
                 return None
                 
     except Exception as e:
-        # Only log unexpected errors
         print(f"Unexpected error fetching existing code from {task}: {str(e)}")
         return None
 
@@ -89,7 +88,6 @@ def create_or_update_repo(
     repo_name = task
     owner = user.login
 
-    # Try to get existing repo first
     repo = None
     existing_repo = None
     try:
@@ -110,7 +108,6 @@ def create_or_update_repo(
                 )
                 print(f"Repository {repo_name} created successfully")
 
-                # Add LICENSE
                 try:
                     repo.create_file(
                         path="LICENSE",
@@ -124,7 +121,6 @@ def create_or_update_repo(
                     else:
                         print(f"Warning: Could not create LICENSE: {str(license_error)}")
 
-                # Add initial README
                 try:
                     repo.create_file(
                         path="README.md",
@@ -139,7 +135,6 @@ def create_or_update_repo(
                         print(f"Warning: Could not create README: {str(readme_error)}")
 
             except GithubException as create_error:
-                # Handle race condition: repo was created between check and create
                 if (
                     create_error.status == 422
                     and "name already exists" in str(create_error).lower()
@@ -158,16 +153,13 @@ def create_or_update_repo(
         else:
             raise RuntimeError(f"Failed to check repository existence: {str(e)}")
 
-    # Ensure we have a repo object
     if repo is None:
         raise RuntimeError(f"Failed to get or create repository {repo_name}")
 
-    # Get the index.html content
     index_content = code_files.get(
         "index.html", "<html><body><h1>Welcome</h1></body></html>"
     )
 
-    # Upload index.html and configure Pages
     try:
         upsert_pages_index(
             owner=owner,
@@ -179,17 +171,13 @@ def create_or_update_repo(
         )
     except Exception as e:
         print(f"Error during Pages setup: {str(e)}")
-        # If Pages setup fails but file upload succeeded, we can continue
-        # The error handling in upsert_pages_index should have handled this gracefully
         print("Continuing despite Pages setup issues (file should be uploaded)...")
 
-    # Get latest commit SHA
     try:
         commits = repo.get_commits()
         latest_commit_sha = commits[0].sha
     except Exception as e:
         print(f"Warning: Could not fetch latest commit: {str(e)}")
-        # Use a placeholder if we can't get the commit
         latest_commit_sha = "unknown"
 
     pages_url = f"https://{owner}.github.io/{repo_name}/"
@@ -215,7 +203,6 @@ def upsert_pages_index(
     gh = get_github_client()
     repo = gh.get_repo(f"{owner}/{repo_name}")
 
-    # Step 1: Update or create the HTML file
     try:
         contents = repo.get_contents(path, ref=branch)
         repo.update_file(
@@ -238,7 +225,6 @@ def upsert_pages_index(
         else:
             raise
 
-    # Step 2: Set up GitHub Pages with retry logic
     base = "https://api.github.com"
     hdrs = {
         "Accept": "application/vnd.github+json",
@@ -246,17 +232,14 @@ def upsert_pages_index(
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    # Retry configuration
     max_retries = 3
-    retry_delay = 2  # seconds
+    retry_delay = 2 
     
     for attempt in range(max_retries):
         try:
-            # Check if Pages exists
             r = requests.get(f"{base}/repos/{owner}/{repo_name}/pages", headers=hdrs, timeout=10)
             
             if r.status_code == 404:
-                # Pages doesn't exist, create it
                 print(f"GitHub Pages not found, creating (attempt {attempt + 1}/{max_retries})...")
                 body = {"source": {"branch": branch, "path": "/"}}
                 cr = requests.post(
@@ -267,12 +250,10 @@ def upsert_pages_index(
                     print("Pages site created successfully")
                     break
                 elif cr.status_code == 409:
-                    # Pages site already exists (race condition)
                     print("Pages site already exists (409), continuing...")
                     break
                 elif cr.status_code == 403:
                     print(f"Permission denied (403). Pages might be disabled for this repo. Details: {cr.text}")
-                    # Don't fail completely, the file is uploaded
                     break
                 else:
                     error_msg = f"Failed to create Pages site: {cr.status_code} {cr.text}"
@@ -281,12 +262,10 @@ def upsert_pages_index(
                         time.sleep(retry_delay)
                         continue
                     else:
-                        # Last attempt failed, but don't raise - the file is uploaded
                         print(f"Warning: {error_msg}. File uploaded but Pages setup incomplete.")
                         break
                         
             elif r.status_code == 200:
-                # Pages exists, update it
                 print(f"Updating existing Pages configuration (attempt {attempt + 1}/{max_retries})...")
                 body = {"source": {"branch": branch, "path": "/"}}
                 pr = requests.patch(
@@ -297,7 +276,6 @@ def upsert_pages_index(
                     print("Pages site updated successfully")
                     break
                 elif pr.status_code == 404:
-                    # Race condition: Pages was deleted between GET and PATCH
                     print("Pages deleted between checks, will retry creation...")
                     if attempt < max_retries - 1:
                         time.sleep(retry_delay)
@@ -350,7 +328,6 @@ def upsert_pages_index(
                 print(f"Warning: Request error after retries: {str(e)}. File uploaded but Pages status unclear.")
                 break
 
-    # Step 3: Request Pages build (best effort)
     try:
         br = requests.post(f"{base}/repos/{owner}/{repo_name}/pages/builds", headers=hdrs, timeout=10)
         if br.status_code in (201, 202):
