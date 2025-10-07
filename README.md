@@ -31,7 +31,7 @@ This project implements an automated workflow for building and deploying web app
 
 ```bash
 # Install packages with uv
-uv add python-dotenv
+uv sync
 ```
 
 All required packages are already defined in `pyproject.toml`.
