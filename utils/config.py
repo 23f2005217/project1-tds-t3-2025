@@ -6,10 +6,10 @@ from github import Github
 
 load_dotenv()
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SECRET = os.getenv("SECRET")
-GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+SECRET = os.getenv("SECRET", "")
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME", "")
 PORT = int(os.getenv("PORT", 5000))
 
 _openai_client = None
@@ -18,7 +18,7 @@ _github_client = None
 
 def validate_config():
     missing = []
-    
+
     if not GITHUB_TOKEN:
         missing.append("GITHUB_TOKEN")
     if not OPENAI_API_KEY:
@@ -27,7 +27,7 @@ def validate_config():
         missing.append("SECRET")
     if not GITHUB_USERNAME:
         missing.append("GITHUB_USERNAME")
-    
+
     if missing:
         print("\nERROR: Missing required environment variables:")
         for var in missing:
@@ -35,11 +35,15 @@ def validate_config():
         print("\nPlease set these variables in your .env file.")
         print("See .env.example for reference.\n")
         sys.exit(1)
-    
+
     print("Configuration validated successfully")
     print(f"  - GitHub Username: {GITHUB_USERNAME}")
-    print(f"  - GitHub Token: {'*' * 10}{GITHUB_TOKEN[-4:] if len(GITHUB_TOKEN) > 4 else '****'}")
-    print(f"  - OpenAI API Key: {'*' * 10}{OPENAI_API_KEY[-4:] if len(OPENAI_API_KEY) > 4 else '****'}")
+    print(
+        f"  - GitHub Token: {'*' * 10}{GITHUB_TOKEN[-4:] if len(GITHUB_TOKEN) > 4 else '****'}"
+    )
+    print(
+        f"  - OpenAI API Key: {'*' * 10}{OPENAI_API_KEY[-4:] if len(OPENAI_API_KEY) > 4 else '****'}"
+    )
     print(f"  - Secret: {'*' * len(SECRET)}")
     print(f"  - Port: {PORT}\n")
 
@@ -50,7 +54,7 @@ def load_config():
         "openai_api_key": OPENAI_API_KEY,
         "secret": SECRET,
         "github_username": GITHUB_USERNAME,
-        "port": PORT
+        "port": PORT,
     }
 
 
@@ -59,7 +63,10 @@ def get_openai_client():
     if _openai_client is None:
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY not set in environment")
-        _openai_client = OpenAI(api_key=OPENAI_API_KEY, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
+        _openai_client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
     return _openai_client
 
 

@@ -22,10 +22,10 @@ test_request_calculator = {
         "README.md is professional and complete",
         "Calculator UI is clean and intuitive",
         "All basic operations work correctly",
-        "Result is displayed properly"
+        "Result is displayed properly",
     ],
     "evaluation_url": "https://httpbin.org/post",
-    "attachments": []
+    "attachments": [],
 }
 
 test_request_sales_summary = {
@@ -38,15 +38,15 @@ test_request_sales_summary = {
     "checks": [
         "js: document.title === 'Sales Summary 12345'",
         "js: !!document.querySelector(\"link[href*='bootstrap']\")",
-        "js: Math.abs(parseFloat(document.querySelector(\"#total-sales\").textContent) - 15000) < 0.01"
+        'js: Math.abs(parseFloat(document.querySelector("#total-sales").textContent) - 15000) < 0.01',
     ],
     "evaluation_url": "https://httpbin.org/post",
     "attachments": [
         {
             "name": "data.csv",
-            "url": "data:text/csv;base64,cHJvZHVjdCxzYWxlcwpBLDUwMDAKQiwxMDAwMApDLDUwMDA="
+            "url": "data:text/csv;base64,cHJvZHVjdCxzYWxlcwpBLDUwMDAKQiwxMDAwMApDLDUwMDA=",
         }
-    ]
+    ],
 }
 
 test_request_github_user = {
@@ -57,12 +57,12 @@ test_request_github_user = {
     "nonce": "github-nonce-001",
     "brief": "Publish a Bootstrap page with form id='github-user-abc123' that fetches a GitHub username, optionally uses ?token=, and displays the account creation date in YYYY-MM-DD UTC inside #github-created-at.",
     "checks": [
-        "js: document.querySelector(\"#github-user-abc123\").tagName === \"FORM\"",
-        "js: document.querySelector(\"#github-created-at\").textContent.includes(\"20\")",
-        "js: !!document.querySelector(\"script\").textContent.includes(\"https://api.github.com/users/\")"
+        'js: document.querySelector("#github-user-abc123").tagName === "FORM"',
+        'js: document.querySelector("#github-created-at").textContent.includes("20")',
+        'js: !!document.querySelector("script").textContent.includes("https://api.github.com/users/")',
     ],
     "evaluation_url": "https://httpbin.org/post",
-    "attachments": []
+    "attachments": [],
 }
 
 test_request_markdown_to_html = {
@@ -75,15 +75,15 @@ test_request_markdown_to_html = {
     "checks": [
         "js: !!document.querySelector(\"script[src*='marked']\")",
         "js: !!document.querySelector(\"script[src*='highlight.js']\")",
-        "js: document.querySelector(\"#markdown-output\").innerHTML.includes(\"<h\")"
+        'js: document.querySelector("#markdown-output").innerHTML.includes("<h")',
     ],
     "evaluation_url": "https://httpbin.org/post",
     "attachments": [
         {
             "name": "input.md",
-            "url": "data:text/markdown;base64,IyBIZWxsbyBXb3JsZAoKVGhpcyBpcyBhIHNhbXBsZSBtYXJrZG93biBmaWxlLgoKYGBgYApjb2RlIGJsb2NrCmBgYAo="
+            "url": "data:text/markdown;base64,IyBIZWxsbyBXb3JsZAoKVGhpcyBpcyBhIHNhbXBsZSBtYXJrZG93biBmaWxlLgoKYGBgYApjb2RlIGJsb2NrCmBgYAo=",
         }
-    ]
+    ],
 }
 
 test_request_sum_of_sales = {
@@ -96,15 +96,15 @@ test_request_sum_of_sales = {
     "checks": [
         "js: document.title === 'Sales Summary 12345'",
         "js: !!document.querySelector(\"link[href*='bootstrap']\")",
-        "js: Math.abs(parseFloat(document.querySelector(\"#total-sales\").textContent) - 15000) < 0.01"
+        'js: Math.abs(parseFloat(document.querySelector("#total-sales").textContent) - 15000) < 0.01',
     ],
     "evaluation_url": "https://httpbin.org/post",
     "attachments": [
         {
             "name": "data.csv",
-            "url": "data:text/csv;base64,cHJvZHVjdCxzYWxlcwpBLDUwMDAKQiwxMDAwMApDLDUwMDA="
+            "url": "data:text/csv;base64,cHJvZHVjdCxzYWxlcwpBLDUwMDAKQiwxMDAwMApDLDUwMDA=",
         }
-    ]
+    ],
 }
 
 test_request_github_user_created = {
@@ -115,12 +115,12 @@ test_request_github_user_created = {
     "nonce": "github-nonce-001",
     "brief": "Publish a Bootstrap page with form id='github-user-abc123' that fetches a GitHub username, optionally uses ?token=, and displays the account creation date in YYYY-MM-DD UTC inside #github-created-at.",
     "checks": [
-        "js: document.querySelector(\"#github-user-abc123\").tagName === \"FORM\"",
-        "js: document.querySelector(\"#github-created-at\").textContent.includes(\"20\")",
-        "js: !!document.querySelector(\"script\").textContent.includes(\"https://api.github.com/users/\")"
+        'js: document.querySelector("#github-user-abc123").tagName === "FORM"',
+        'js: document.querySelector("#github-created-at").textContent.includes("20")',
+        'js: !!document.querySelector("script").textContent.includes("https://api.github.com/users/")',
     ],
     "evaluation_url": "https://httpbin.org/post",
-    "attachments": []
+    "attachments": [],
 }
 
 # Additional example: simple static page with a counter
@@ -132,12 +132,12 @@ test_request_counter_app = {
     "nonce": "counter-nonce-001",
     "brief": "Publish a static page with a button #increment-btn and a number inside #counter-value that increments by 1 each time the button is clicked.",
     "checks": [
-        "js: !!document.querySelector(\"#increment-btn\")",
-        "js: !!document.querySelector(\"#counter-value\")",
-        "js: (() => { const v = document.querySelector(\"#counter-value\"); const b = document.querySelector(\"#increment-btn\"); const before = parseInt(v.textContent, 10); b.click(); return parseInt(v.textContent, 10) === before + 1; })()"
+        'js: !!document.querySelector("#increment-btn")',
+        'js: !!document.querySelector("#counter-value")',
+        'js: (() => { const v = document.querySelector("#counter-value"); const b = document.querySelector("#increment-btn"); const before = parseInt(v.textContent, 10); b.click(); return parseInt(v.textContent, 10) === before + 1; })()',
     ],
     "evaluation_url": "https://httpbin.org/post",
-    "attachments": []
+    "attachments": [],
 }
 
 # Additional example: static page with a dark mode toggle
@@ -149,14 +149,15 @@ test_request_dark_mode = {
     "nonce": "darkmode-nonce-001",
     "brief": "Publish a static page with a toggle #dark-mode-toggle that switches the page between light and dark themes, updating the body class.",
     "checks": [
-        "js: !!document.querySelector(\"#dark-mode-toggle\")",
-        "js: (() => { const t = document.querySelector(\"#dark-mode-toggle\"); const b = document.body; t.click(); return b.classList.contains(\"dark\"); })()"
+        'js: !!document.querySelector("#dark-mode-toggle")',
+        'js: (() => { const t = document.querySelector("#dark-mode-toggle"); const b = document.body; t.click(); return b.classList.contains("dark"); })()',
     ],
     "evaluation_url": "https://httpbin.org/post",
-    "attachments": []
+    "attachments": [],
 }
 
 test_request = test_request_calculator
+
 
 def test_health():
     print("Testing health endpoint...")
@@ -169,34 +170,35 @@ def test_health():
         print(f"Health check failed: {e}")
         return False
 
+
 def test_deployment(request_data=None):
     if request_data is None:
         request_data = test_request
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("Testing deployment endpoint...")
-    print("="*60)
-    
+    print("=" * 60)
+
     print("\nSending request:")
     print(json.dumps(request_data, indent=2))
-    
+
     try:
         response = requests.post(
             API_URL,
             json=request_data,
             headers={"Content-Type": "application/json"},
-            timeout=120  # Give it 2 minutes to complete
+            timeout=320,  # Give it 2 minutes to complete
         )
-        
+
         print(f"\nResponse Status: {response.status_code}")
         print("Response Body:")
         print(json.dumps(response.json(), indent=2))
-        
+
         if response.status_code == 200:
             data = response.json()
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print(" SUCCESS!")
-            print("="*60)
+            print("=" * 60)
             print(f"Repository: {data.get('repo_url')}")
             print(f"GitHub Pages: {data.get('pages_url')}")
             print(f"Commit SHA: {data.get('commit_sha')}")
@@ -205,46 +207,47 @@ def test_deployment(request_data=None):
         else:
             print("\n Request failed")
             return False
-            
+
     except requests.RequestException as e:
         print(f"\n Request error: {e}")
         return False
+
 
 def test_round_2(base_request=None, brief=None):
     if base_request is None:
         base_request = test_request
     if brief is None:
         brief = "Update the calculator to also support square root and percentage operations. Add a clear button to reset the calculator."
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("Testing Round 2 (Revision) endpoint...")
-    print("="*60)
-    
+    print("=" * 60)
+
     round2_request = base_request.copy()
     round2_request["round"] = 2
     round2_request["brief"] = brief
     round2_request["nonce"] = base_request.get("nonce", "test-nonce") + "-round2"
-    
+
     print("\nSending Round 2 request:")
     print(json.dumps(round2_request, indent=2))
-    
+
     try:
         response = requests.post(
             API_URL,
             json=round2_request,
             headers={"Content-Type": "application/json"},
-            timeout=120
+            timeout=120,
         )
-        
+
         print(f"\nResponse Status: {response.status_code}")
         print("Response Body:")
         print(json.dumps(response.json(), indent=2))
-        
+
         if response.status_code == 200:
             data = response.json()
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print(" ROUND 2 SUCCESS!")
-            print("="*60)
+            print("=" * 60)
             print(f"Repository: {data.get('repo_url')}")
             print(f"GitHub Pages: {data.get('pages_url')}")
             print(f"Commit SHA: {data.get('commit_sha')}")
@@ -252,10 +255,11 @@ def test_round_2(base_request=None, brief=None):
         else:
             print("\n Round 2 request failed")
             return False
-            
+
     except requests.RequestException as e:
         print(f"\n Request error: {e}")
         return False
+
 
 def select_test_example():
     print("\nAvailable test examples:")
@@ -265,8 +269,10 @@ def select_test_example():
     print("4. Markdown to HTML (marked, highlight.js)")
     print("5. Counter App (static, button increments value)")
     print("6. Dark Mode Toggle (static, theme switch)")
-    print("\nSelect an example (1-6), or press Enter for default (Calculator): ", end="")
-    
+    print(
+        "\nSelect an example (1-6), or press Enter for default (Calculator): ", end=""
+    )
+
     try:
         choice = input().strip()
         if not choice or choice == "1":
@@ -295,69 +301,69 @@ def get_round2_examples(example_name):
             {
                 "brief": "Add a Bootstrap table #product-sales that lists each product with its total sales and keeps #total-sales accurate after render.",
                 "checks": [
-                    "js: document.querySelectorAll(\"#product-sales tbody tr\").length >= 1",
-                    "js: (() => { const rows = [...document.querySelectorAll(\"#product-sales tbody tr td:last-child\")]; const sum = rows.reduce((acc, cell) => acc + parseFloat(cell.textContent), 0); return Math.abs(sum - 15000) < 0.01; })()"
-                ]
+                    'js: document.querySelectorAll("#product-sales tbody tr").length >= 1',
+                    'js: (() => { const rows = [...document.querySelectorAll("#product-sales tbody tr td:last-child")]; const sum = rows.reduce((acc, cell) => acc + parseFloat(cell.textContent), 0); return Math.abs(sum - 15000) < 0.01; })()',
+                ],
             },
             {
                 "brief": "Introduce a currency select #currency-picker that converts the computed total using rates.json from attachments and mirrors the active currency inside #total-currency.",
                 "checks": [
                     "js: !!document.querySelector(\"#currency-picker option[value='USD']\")",
-                    "js: !!document.querySelector(\"#total-currency\")"
+                    'js: !!document.querySelector("#total-currency")',
                 ],
                 "attachments": [
                     {
                         "name": "rates.json",
-                        "url": "data:application/json;base64,eyJVU0QiOjEsIkVVUiI6MC44NX0="
+                        "url": "data:application/json;base64,eyJVU0QiOjEsIkVVUiI6MC44NX0=",
                     }
-                ]
+                ],
             },
             {
                 "brief": "Allow filtering by region via #region-filter, update #total-sales with the filtered sum, and set data-region on that element to the active choice.",
                 "checks": [
-                    "js: document.querySelector(\"#region-filter\").tagName === \"SELECT\"",
-                    "js: document.querySelector(\"#total-sales\").dataset.region !== undefined"
-                ]
-            }
+                    'js: document.querySelector("#region-filter").tagName === "SELECT"',
+                    'js: document.querySelector("#total-sales").dataset.region !== undefined',
+                ],
+            },
         ]
     elif example_name == "GitHub User Created":
         return [
             {
                 "brief": "Show an aria-live alert #github-status that reports when a lookup starts, succeeds, or fails.",
                 "checks": [
-                    "js: document.querySelector(\"#github-status\").getAttribute(\"aria-live\") === \"polite\"",
-                    "js: !!document.querySelector(\"script\").textContent.includes(\"github-status\")"
-                ]
+                    'js: document.querySelector("#github-status").getAttribute("aria-live") === "polite"',
+                    'js: !!document.querySelector("script").textContent.includes("github-status")',
+                ],
             },
             {
                 "brief": "Display the account age in whole years inside #github-account-age alongside the creation date.",
                 "checks": [
-                    "js: parseInt(document.querySelector(\"#github-account-age\").textContent, 10) >= 0",
-                    "js: document.querySelector(\"#github-account-age\").textContent.toLowerCase().includes(\"years\")"
-                ]
+                    'js: parseInt(document.querySelector("#github-account-age").textContent, 10) >= 0',
+                    'js: document.querySelector("#github-account-age").textContent.toLowerCase().includes("years")',
+                ],
             },
             {
-                "brief": "Cache the last successful lookup in localStorage under \"github-user-abc123\" and repopulate the form on load.",
+                "brief": 'Cache the last successful lookup in localStorage under "github-user-abc123" and repopulate the form on load.',
                 "checks": [
-                    "js: !!document.querySelector(\"script\").textContent.includes(\"localStorage.setItem(\\\"github-user-abc123\\\"\")",
-                    "js: !!document.querySelector(\"script\").textContent.includes(\"localStorage.getItem(\\\"github-user-abc123\\\"\")"
-                ]
-            }
+                    'js: !!document.querySelector("script").textContent.includes("localStorage.setItem(\\"github-user-abc123\\"")',
+                    'js: !!document.querySelector("script").textContent.includes("localStorage.getItem(\\"github-user-abc123\\"")',
+                ],
+            },
         ]
     else:
         return []
 
 
 def main():
-    print("="*60)
+    print("=" * 60)
     print("LLM Code Deployment System - Test Suite")
-    print("="*60)
+    print("=" * 60)
     print("\nMake sure the server is running (uv run main.py)")
-    
+
     selected_request, example_name = select_test_example()
     if selected_request is None:
         return
-    
+
     print(f"\nSelected: {example_name}")
     print("Press Enter to continue, or Ctrl+C to cancel...")
     try:
@@ -365,11 +371,11 @@ def main():
     except KeyboardInterrupt:
         print("\n\nCancelled.")
         return
-    
+
     if not test_health():
         print("\n Server is not responding. Make sure it's running.")
         return
-    
+
     print("\n\nStarting deployment test...")
     print("This will create a real GitHub repository and may take 30-60 seconds.")
     print("Press Enter to continue, or Ctrl+C to cancel...")
@@ -378,25 +384,27 @@ def main():
     except KeyboardInterrupt:
         print("\n\nCancelled.")
         return
-    
+
     success = test_deployment(selected_request)
-    
+
     if success:
         round2_examples = get_round2_examples(example_name)
-        
+
         if round2_examples:
-            print(f"\n\nThis example has {len(round2_examples)} Round 2 scenarios available.")
+            print(
+                f"\n\nThis example has {len(round2_examples)} Round 2 scenarios available."
+            )
             print("Would you like to test Round 2 revisions? (y/n)")
             try:
                 choice = input().strip().lower()
-                if choice == 'y':
+                if choice == "y":
                     for i, scenario in enumerate(round2_examples, 1):
                         print(f"\n\nRound 2 Scenario {i}/{len(round2_examples)}:")
                         print(f"Brief: {scenario['brief'][:80]}...")
                         print("Press Enter to test, or 's' to skip...")
                         try:
                             skip = input().strip().lower()
-                            if skip != 's':
+                            if skip != "s":
                                 r2_request = selected_request.copy()
                                 r2_request["brief"] = scenario["brief"]
                                 r2_request["checks"] = scenario["checks"]
@@ -412,14 +420,15 @@ def main():
             print("\n\nWould you like to test Round 2 (revision)? (y/n)")
             try:
                 choice = input().strip().lower()
-                if choice == 'y':
+                if choice == "y":
                     test_round_2(selected_request)
             except KeyboardInterrupt:
                 print("\n\nCancelled.")
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("Test suite completed!")
-    print("="*60)
+    print("=" * 60)
+
 
 if __name__ == "__main__":
     main()
