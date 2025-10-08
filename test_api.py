@@ -10,6 +10,8 @@ load_dotenv()
 API_URL = "http://localhost:5000/api-endpoint"
 SECRET = os.getenv("SECRET", "your_secret_key_here")
 
+timeouts = {"test_health": 5, "round1": 500, "round2": 500}
+
 test_request_calculator = {
     "email": "test@example.com",
     "secret": SECRET,
@@ -162,7 +164,9 @@ test_request = test_request_calculator
 def test_health():
     print("Testing health endpoint...")
     try:
-        response = requests.get("http://localhost:5000/health", timeout=5)
+        response = requests.get(
+            "http://localhost:5000/health", timeout=timeouts["test_health"]
+        )
         print(f"Health check: {response.status_code}")
         print(f"Response: {response.json()}")
         return response.status_code == 200
@@ -187,7 +191,7 @@ def test_deployment(request_data=None):
             API_URL,
             json=request_data,
             headers={"Content-Type": "application/json"},
-            timeout=320,  # Give it 2 minutes to complete
+            timeout=timeouts.get("round1"),  # Give it 2 minutes to complete
         )
 
         print(f"\nResponse Status: {response.status_code}")
@@ -236,7 +240,7 @@ def test_round_2(base_request=None, brief=None):
             API_URL,
             json=round2_request,
             headers={"Content-Type": "application/json"},
-            timeout=120,
+            timeout=timeouts.get("round2"),
         )
 
         print(f"\nResponse Status: {response.status_code}")
