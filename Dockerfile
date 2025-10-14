@@ -18,7 +18,7 @@ COPY config.yaml /app/
 COPY pyproject.toml /app/
 COPY requirements.txt /app/
 
-RUN uv pip install --system -r requirements.txt
+RUN uv sync
 
 COPY . /app/
 
