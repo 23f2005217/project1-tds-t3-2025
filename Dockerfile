@@ -1,23 +1,26 @@
 FROM python:3.11-slim AS builder
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 WORKDIR /app
 
-COPY requirements.txt /app/
-
-RUN python -m venv /app/venv
-
-RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml /app/
+COPY . /app
 
 FROM python:3.11-slim AS final
 
 WORKDIR /app
 
-COPY --from=builder /app/venv /app/venv
+COPY --from=builder /app /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-COPY . /app
+RUN chmod +x /bin/uv
+RUN mkdir -p /app/.local/share/uv /app/.cache/uv
+RUN chmod -R 777 /app /app/.local /app/.cache
 
-ENV PATH="/app/venv/bin:$PATH"
+ENV UV_CACHE_DIR=/app/.cache/uv
+ENV XDG_DATA_HOME=/app/.local/share
 
 EXPOSE 5000
 
-CMD ["/app/venv/bin/python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["uv", "run", "main.py"]
