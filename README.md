@@ -1,3 +1,14 @@
+---
+title: LLM Code Deployment System
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: docker
+python_version: "3.13"
+app_file: main.py
+pinned: false
+---
+
 # LLM Code Deployment System
 
 An automated application deployment system that receives briefs, generates apps using LLMs, deploys them to GitHub Pages, and handles iterative updates.
