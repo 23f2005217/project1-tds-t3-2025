@@ -7,14 +7,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=5000
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates && \
+    curl ca-certificates bash xz-utils && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 RUN mkdir -p /app/.cache
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && uv --version
 
 COPY .env* /app/
 COPY config.yaml /app/
