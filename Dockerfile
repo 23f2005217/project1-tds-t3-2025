@@ -15,8 +15,8 @@ COPY --from=builder /app /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 RUN chmod +x /bin/uv
-
-RUN mkdir -p /app/.local/share/uv /app/.cache/uv && chmod -R 777 /app/.local /app/.cache
+RUN mkdir -p /app/.local/share/uv /app/.cache/uv
+RUN chmod -R 777 /app /app/.local /app/.cache
 
 ENV UV_CACHE_DIR=/app/.cache/uv
 ENV XDG_DATA_HOME=/app/.local/share
