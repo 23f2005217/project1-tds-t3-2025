@@ -29,3 +29,5 @@ build/
 # Notebooks and data
 *.ipynb_checkpoints/
 .envrc
+test_api.py
+test_api.sh

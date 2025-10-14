@@ -10,13 +10,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY .env* /app/
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-COPY pyproject.toml /app/
-COPY . /app
+COPY .env* /app/
 COPY config.yaml /app/
+COPY pyproject.toml /app/
+COPY requirements.txt /app/
+
+RUN uv pip install --system -r requirements.txt
+
+COPY . /app/
 
 EXPOSE 5000
 
