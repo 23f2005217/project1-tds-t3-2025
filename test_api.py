@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = "http://localhost:5000/api-endpoint"
+B_URL = "http://localhost:5000"
+B_URL = "https://project1-tds-t3-2025.vercel.app/"
+API_URL =B_URL + "/api-endpoint"
 SECRET = os.getenv("SECRET", "your_secret_key_here")
 
 timeouts = {"test_health": 5, "round1": 500, "round2": 500}
@@ -157,6 +159,81 @@ test_request_dark_mode = {
     "attachments": [],
 }
 
+test_request_file_preview = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "file-preview-test",
+    "round": 1,
+    "nonce": "file-preview-nonce-001",
+    "brief": "Create a page that displays data from the CSV file showing employee information. Parse the CSV data and display it in a Bootstrap table with id='employee-table'. Also show the first line of the notes.txt file in a div with id='notes-preview'.",
+    "checks": [
+        'js: !!document.querySelector("#employee-table")',
+        'js: document.querySelectorAll("#employee-table tbody tr").length >= 3',
+        'js: !!document.querySelector("#notes-preview")',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "sample_data.csv",
+            "url": "data:text/csv;base64,bmFtZSxhZ2UsY2l0eSxzYWxhcnkKSm9obiBEb2UsMjgsTmV3IFlvcmssNzUwMDAKSmFuZSBTbWl0aCwzNCxMb3MgQW5nZWxlcyw4MjAwMApCb2IgSm9obnNvbiw0NSxDaGljYWdvLDY1MDAwCkFsaWNlIFdpbGxpYW1zLDI5LEhvdXN0b24sNzEwMDAKQ2hhcmxpZSBCcm93biwzOCxQaG9lbml4LDY4MDAwCkRhdmlkIExlZSw1MixQaGlsYWRlbHBoaWEsOTUwMDAKRW1tYSBEYXZpcywzMSxTYW4gQW50b25pbyw3MzAwMApGcmFuayBNaWxsZXIsNDEsU2FuIERpZWdvLDc5MDAwCkdyYWNlIFdpbHNvbiwyNyxEYWxsYXMsNjcwMDAKSGVucnkgTW9vcmUsMzYsU2FuIEpvc2UsODgwMDA=",
+        },
+        {
+            "name": "notes.txt",
+            "url": "data:text/plain;base64,UHJvamVjdCBSZXF1aXJlbWVudHMgRG9jdW1lbnQKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KVmVyc2lvbjogMS4wCkRhdGU6IDIwMjUtMTAtMTQKQXV0aG9yOiBUZXN0IFRlYW0KClRoaXMgaXMgYSBzYW1wbGUgdGV4dCBmaWxlIGZvciB0ZXN0aW5nIGZpbGUgcHJldmlldyBmdW5jdGlvbmFsaXR5LgpUaGUgc3lzdGVtIHNob3VsZCBiZSBhYmxlIHRvIHJlYWQgdGhlIGZpcnN0IDUgbGluZXMgb2YgdGhpcyBmaWxlLgpFYWNoIGxpbmUgY29udGFpbnMgaW1wb3J0YW50IGluZm9ybWF0aW9uLgpMaW5lIDQ6IFRlc3RpbmcgcHJvcGVyIGxpbmUgcmVhZGluZy4KTGluZSA1OiBUaGlzIHNob3VsZCBiZSB0aGUgbGFzdCBsaW5lIGRpc3BsYXllZCBpbiBwcmV2aWV3LgpMaW5lIDY6IFRoaXMgbGluZSBzaG91bGQgTk9UIGFwcGVhciBpbiB0aGUgcHJldmlldy4KQWRkaXRpb25hbCBjb250ZW50IGZvbGxvd3MgYnV0IHdvbid0IGJlIHZpc2libGUgaW4gdGhlIGluaXRpYWwgcHJldmlldy4=",
+        },
+    ],
+}
+
+test_request_image_gallery = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "image-gallery-test",
+    "round": 1,
+    "nonce": "image-gallery-nonce-001",
+    "brief": "Create a responsive image gallery page that displays the attached logo image. The page should have a title 'Image Gallery', use Bootstrap for styling, and display the image with id='gallery-image'. Add a caption below the image with id='image-caption' that says 'Company Logo'.",
+    "checks": [
+        'js: !!document.querySelector("#gallery-image")',
+        'js: document.querySelector("#gallery-image").tagName === "IMG"',
+        'js: !!document.querySelector("#image-caption")',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "logo.png",
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        },
+    ],
+}
+
+test_request_multi_media = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "multi-media-test",
+    "round": 1,
+    "nonce": "multi-media-nonce-001",
+    "brief": "Create a multimedia showcase page with Bootstrap styling. Display the logo image in an img tag with id='showcase-image', show the first 3 lines of data from data.csv in a div with id='data-preview', and add a section with id='file-info' that lists information about all attached files.",
+    "checks": [
+        'js: !!document.querySelector("#showcase-image")',
+        'js: !!document.querySelector("#data-preview")',
+        'js: !!document.querySelector("#file-info")',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "logo.png",
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        },
+        {
+            "name": "data.csv",
+            "url": "data:text/csv;base64,bmFtZSxhZ2UsY2l0eSxzYWxhcnkKSm9obiBEb2UsMjgsTmV3IFlvcmssNzUwMDAKSmFuZSBTbWl0aCwzNCxMb3MgQW5nZWxlcyw4MjAwMA==",
+        },
+        {
+            "name": "readme.txt",
+            "url": "data:text/plain;base64,VGhpcyBpcyBhIHNhbXBsZSByZWFkbWUgZmlsZQpMaW5lIDIgb2YgdGhlIHJlYWRtZQpMaW5lIDMgb2YgdGhlIHJlYWRtZQ==",
+        },
+    ],
+}
+
 test_request = test_request_calculator
 
 
@@ -164,7 +241,7 @@ def test_health():
     print("Testing health endpoint...")
     try:
         response = requests.get(
-            "http://localhost:5000/health", timeout=timeouts["test_health"]
+            B_URL + "/health", timeout=timeouts["test_health"]
         )
         print(f"Health check: {response.status_code}")
         print(f"Response: {response.json()}")
@@ -272,8 +349,11 @@ def select_test_example():
     print("4. Markdown to HTML (marked, highlight.js)")
     print("5. Counter App (static, button increments value)")
     print("6. Dark Mode Toggle (static, theme switch)")
+    print("7. File Preview Test (CSV + TXT with first 5 lines preview)")
+    print("8. Image Gallery Test (PNG image rendering)")
+    print("9. Multi-Media Test (Image + CSV + TXT combined)")
     print(
-        "\nSelect an example (1-6), or press Enter for default (Calculator): ", end=""
+        "\nSelect an example (1-9), or press Enter for default (Calculator): ", end=""
     )
 
     try:
@@ -290,6 +370,12 @@ def select_test_example():
             return test_request_counter_app, "Counter App"
         elif choice == "6":
             return test_request_dark_mode, "Dark Mode Toggle"
+        elif choice == "7":
+            return test_request_file_preview, "File Preview Test"
+        elif choice == "8":
+            return test_request_image_gallery, "Image Gallery Test"
+        elif choice == "9":
+            return test_request_multi_media, "Multi-Media Test"
         else:
             print("Invalid choice, using default (Calculator App)")
             return test_request_calculator, "Calculator App"
