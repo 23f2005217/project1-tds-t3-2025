@@ -160,7 +160,7 @@ def health():
 def main():
     validate_config()
     config = load_config()
-    port = config.get("port", 8000)
+    port = config.get("port", 5000)
     print(f"Starting LLM Code Deployment API on port {port}")
     print(f"API endpoint: http://localhost:{port}/api-endpoint")
     app.run(host="0.0.0.0", port=port, debug=True)

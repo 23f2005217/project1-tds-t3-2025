@@ -10,7 +10,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SECRET = os.getenv("SECRET", "")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME", "")
-PORT = int(os.getenv("PORT", 3000))
+PORT = int(os.getenv("PORT", 5000))
 
 _openai_client = None
 _github_client = None
