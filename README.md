@@ -123,6 +123,76 @@ Notes:
 - The Docker image installs Python 3.13 and uv, copies `.env` early for better caching, and starts the app via `uv run main.py`.
 - Override the port by setting `PORT` in your `.env` and mapping it accordingly, e.g. `-p 8080:8080`.
 
+### Deploy to Vercel
+
+You can deploy this application to Vercel for production hosting:
+
+#### 1. Install Vercel CLI
+
+```bash
+npm i vercel -g
+```
+
+#### 2. Authenticate with Vercel
+
+Run the following command and follow the prompts to authenticate. Create a Vercel account if you don't have one:
+
+```bash
+vercel
+```
+
+This will:
+- Prompt you to log in or sign up
+- Link your project to Vercel
+- Set up the project configuration
+
+#### 3. Test Locally with Vercel
+
+Before deploying to production, test your app locally with Vercel's environment:
+
+```bash
+vercel dev
+```
+
+This starts a local development server that mimics Vercel's production environment.
+
+#### 4. Deploy to Production
+
+Once you're ready, deploy to production:
+
+```bash
+vercel --prod
+```
+## Optional
+#### 5. Configure Environment Variables
+
+After deploying, add your environment variables in the Vercel dashboard:
+
+1. Go to your project settings on Vercel
+2. Navigate to "Environment Variables"
+3. Add the following variables:
+   - `GITHUB_TOKEN`
+   - `GITHUB_USERNAME`
+   - `OPENAI_API_KEY`
+   - `SECRET`
+   - `PORT` (optional)
+
+Alternatively, you can add environment variables via CLI:
+
+```bash
+vercel env add GITHUB_TOKEN
+vercel env add GITHUB_USERNAME
+vercel env add OPENAI_API_KEY
+vercel env add SECRET
+```
+
+#### Notes
+
+- Vercel will automatically detect the Python runtime from `requirements.txt`
+- The `vercel.json` file configures routing and build settings
+- Production URL will be provided after deployment
+- Vercel provides automatic HTTPS and CDN
+
 ### Hugging Face Spaces Configuration
 
 You can configure your Hugging Face Space by adding a YAML block to the top of your `README.md` file. Here are some of the key parameters:
