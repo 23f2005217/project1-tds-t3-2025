@@ -330,6 +330,7 @@ def upsert_pages_index(
 
     try:
         br = requests.post(f"{base}/repos/{owner}/{repo_name}/pages/builds", headers=hdrs, timeout=10)
+        time.sleep(60)
         if br.status_code in (201, 202):
             print("Pages build requested successfully")
         else:
