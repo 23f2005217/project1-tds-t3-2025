@@ -16,6 +16,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 COPY pyproject.toml /app/
 COPY . /app
+COPY config.yaml /app/
 
 EXPOSE 5000
 

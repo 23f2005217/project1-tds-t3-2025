@@ -112,6 +112,24 @@ Notes:
 - The Docker image installs Python 3.13 and uv, copies `.env` early for better caching, and starts the app via `uv run main.py`.
 - Override the port by setting `PORT` in your `.env` and mapping it accordingly, e.g. `-p 8080:8080`.
 
+### Hugging Face Spaces Configuration
+
+You can configure your Hugging Face Space by adding a YAML block to the top of your `README.md` file. Here are some of the key parameters:
+
+*   **`title`**: Display title for the Space.
+*   **`emoji`**: Space emoji.
+*   **`colorFrom`**, **`colorTo`**: Colors for the thumbnail gradient.
+*   **`sdk`**: Can be `gradio`, `docker`, or `static`.
+*   **`python_version`**: Python version to use (e.g., `3.9`).
+*   **`sdk_version`**: Version of the SDK to use (e.g., `gradio` version).
+*   **`suggested_hardware`**: Suggested hardware for the Space (e.g., `cpu-basic`, `t4-small`).
+*   **`suggested_storage`**: Suggested permanent storage (`small`, `medium`, `large`).
+*   **`app_file`**: Path to the main application file.
+*   **`app_build_command`**: Command to run to generate static files (e.g., `npm run build`).
+*   **`secrets`**: A list of secrets to be passed as environment variables.
+
+For a full list of options, see the [Hugging Face Spaces Configuration Reference](https://huggingface.co/docs/hub/spaces-config-reference).
+
 ### API Endpoints
 
 #### POST `/api-endpoint`
