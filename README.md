@@ -95,6 +95,23 @@ uv run main.py
 
 The server will start on `http://localhost:5000` (or the port specified in your `.env`).
 
+### Run with Docker
+
+Build the image and run the container (exposes port 5000 by default):
+
+```bash
+# Build
+docker build -t llm-deploy:latest .
+
+# Run (maps host 5000 -> container 5000)
+docker run --env-file .env -p 5000:5000 llm-deploy:latest
+```
+
+Notes:
+
+- The Docker image installs Python 3.13 and uv, copies `.env` early for better caching, and starts the app via `uv run main.py`.
+- Override the port by setting `PORT` in your `.env` and mapping it accordingly, e.g. `-p 8080:8080`.
+
 ### API Endpoints
 
 #### POST `/api-endpoint`

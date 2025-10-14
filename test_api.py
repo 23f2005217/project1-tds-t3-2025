@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = "http://localhost:5000/api-endpoint"
+API_URL = "http://localhost:3000/api-endpoint"
 SECRET = os.getenv("SECRET", "your_secret_key_here")
 
 timeouts = {"test_health": 5, "round1": 500, "round2": 500}
@@ -125,7 +125,6 @@ test_request_github_user_created = {
     "attachments": [],
 }
 
-# Additional example: simple static page with a counter
 test_request_counter_app = {
     "email": "test@example.com",
     "secret": SECRET,
@@ -165,7 +164,7 @@ def test_health():
     print("Testing health endpoint...")
     try:
         response = requests.get(
-            "http://localhost:5000/health", timeout=timeouts["test_health"]
+            "http://localhost:3000/health", timeout=timeouts["test_health"]
         )
         print(f"Health check: {response.status_code}")
         print(f"Response: {response.json()}")

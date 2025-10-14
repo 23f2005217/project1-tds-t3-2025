@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from utils import (
     load_config,
     validate_config,
@@ -8,25 +9,37 @@ from utils import (
     update_readme,
     notify_evaluation_api,
 )
+from pydantic import BaseModel
+import uvicorn
 
-app = Flask(__name__)
+app = FastAPI()
 
 
-@app.route("/api-endpoint", methods=["POST"])
-def handle_request():
-    data = None
+class RequestData(BaseModel):
+    email: str
+    task: str
+    round: int
+    nonce: str
+    brief: str
+    checks: list
+    evaluation_url: str
+    attachments: list = []
+
+
+@app.post("/api-endpoint")
+async def handle_request(request: Request):
     current_step = "initialization"
+    data = None
 
     try:
-        data = request.get_json()
-
+        data = await request.json()
         if not data:
-            return jsonify({"status": "error", "message": "No JSON data provided"}), 400
+            raise HTTPException(status_code=400, detail="No JSON data provided")
 
         current_step = "validation"
         is_valid, message = validate_request(data)
         if not is_valid:
-            return jsonify({"status": "error", "message": message}), 400
+            raise HTTPException(status_code=400, detail=message)
 
         email = data["email"]
         task = data["task"]
@@ -52,7 +65,7 @@ def handle_request():
                     )
                 else:
                     print(
-                        f"No existing code found (this is OK for first-time Round {round_num})"
+                        "No existing code found (this is OK for first-time Round {round_num})"
                     )
             except Exception as e:
                 print(f"Warning: Could not fetch existing code: {str(e)}")
@@ -65,14 +78,18 @@ def handle_request():
                 brief, checks, attachments, existing_code, round_num
             )
         except Exception as e:
-            raise RuntimeError(f"Code generation failed: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Code generation failed: {str(e)}"
+            )
 
         current_step = "creating/updating repository"
         print("Creating/updating GitHub repository...")
         try:
             repo_info = create_or_update_repo(task, code_files, round_num)
         except Exception as e:
-            raise RuntimeError(f"Repository operation failed: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Repository operation failed: {str(e)}"
+            )
 
         current_step = "updating README"
         print("Updating README...")
@@ -123,7 +140,7 @@ def handle_request():
         if not notify_result:
             response_data["warning"] = "Failed to notify evaluation API after retries"
 
-        return jsonify(response_data), 200
+        return JSONResponse(content=response_data, status_code=200)
 
     except Exception as e:
         print(f"Error processing request at step '{current_step}': {str(e)}")
@@ -135,7 +152,10 @@ def handle_request():
         if current_step != "initialization":
             error_message = f"Failed at step '{current_step}': {error_message}"
 
-        error_response = {"status": "error", "message": error_message}
+        error_response = {
+            "status": "error",
+            "message": error_message,
+        }
 
         if data and all(k in data for k in ["email", "task", "round", "nonce"]):
             error_response.update(
@@ -147,22 +167,21 @@ def handle_request():
                 }
             )
 
-        return jsonify(error_response), 500
+        return JSONResponse(content=error_response, status_code=500)
 
 
-@app.route("/health", methods=["GET"])
+@app.get("/health")
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return JSONResponse(content={"status": "healthy"}, status_code=200)
 
 
 def main():
     validate_config()
-
     config = load_config()
-    port = config["port"]
+    port = config.get("port", 8000)
     print(f"Starting LLM Code Deployment API on port {port}")
     print(f"API endpoint: http://localhost:{port}/api-endpoint")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
 
 
 if __name__ == "__main__":
