@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from flask import Flask, request, jsonify
 from utils import (
     load_config,
     validate_config,
@@ -9,37 +8,24 @@ from utils import (
     update_readme,
     notify_evaluation_api,
 )
-from pydantic import BaseModel
-import uvicorn
 
-app = FastAPI()
+app = Flask(__name__)
 
 
-class RequestData(BaseModel):
-    email: str
-    task: str
-    round: int
-    nonce: str
-    brief: str
-    checks: list
-    evaluation_url: str
-    attachments: list = []
-
-
-@app.post("/api-endpoint")
-async def handle_request(request: Request):
+@app.route("/api-endpoint", methods=["POST"])
+def handle_request():
     current_step = "initialization"
     data = None
 
     try:
-        data = await request.json()
+        data = request.get_json()
         if not data:
-            raise HTTPException(status_code=400, detail="No JSON data provided")
+            return jsonify({"status": "error", "message": "No JSON data provided"}), 400
 
         current_step = "validation"
         is_valid, message = validate_request(data)
         if not is_valid:
-            raise HTTPException(status_code=400, detail=message)
+            return jsonify({"status": "error", "message": message}), 400
 
         email = data["email"]
         task = data["task"]
@@ -78,18 +64,14 @@ async def handle_request(request: Request):
                 brief, checks, attachments, existing_code, round_num
             )
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Code generation failed: {str(e)}"
-            )
+            return jsonify({"status": "error", "message": f"Code generation failed: {str(e)}"}), 500
 
         current_step = "creating/updating repository"
         print("Creating/updating GitHub repository...")
         try:
             repo_info = create_or_update_repo(task, code_files, round_num)
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Repository operation failed: {str(e)}"
-            )
+            return jsonify({"status": "error", "message": f"Repository operation failed: {str(e)}"}), 500
 
         current_step = "updating README"
         print("Updating README...")
@@ -140,7 +122,7 @@ async def handle_request(request: Request):
         if not notify_result:
             response_data["warning"] = "Failed to notify evaluation API after retries"
 
-        return JSONResponse(content=response_data, status_code=200)
+        return jsonify(response_data), 200
 
     except Exception as e:
         print(f"Error processing request at step '{current_step}': {str(e)}")
@@ -167,12 +149,12 @@ async def handle_request(request: Request):
                 }
             )
 
-        return JSONResponse(content=error_response, status_code=500)
+        return jsonify(error_response), 500
 
 
-@app.get("/health")
+@app.route("/health", methods=["GET"])
 def health():
-    return JSONResponse(content={"status": "healthy"}, status_code=200)
+    return jsonify({"status": "healthy"}), 200
 
 
 def main():
@@ -181,7 +163,7 @@ def main():
     port = config.get("port", 8000)
     print(f"Starting LLM Code Deployment API on port {port}")
     print(f"API endpoint: http://localhost:{port}/api-endpoint")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    app.run(host="0.0.0.0", port=port, debug=True)
 
 
 if __name__ == "__main__":
