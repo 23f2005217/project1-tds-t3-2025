@@ -669,6 +669,66 @@ MIT License - see LICENSE file for details
 - Change `PORT` in `.env` file
 - Or kill the process using: `lsof -ti:5000 | xargs kill -9`
 
+## Submission
+
+Once your API is deployed and working, submit your project details:
+
+### Submission Form
+
+Submit your deployment at: [Project Submission Form](https://docs.google.com/forms/d/e/1FAIpQLScInfLkTCeVow9Z-4LL3TjM8NuTX90akPxryCwHhDjUm6laaw/viewform?pli=1)
+
+You will need to provide:
+
+1. **What is the URL of your API?**
+   - Format: `{deployed_link}/api-endpoint`
+   - Example: `https://your-username-your-space.hf.space/api-endpoint`
+   - Or: `https://your-project.vercel.app/api-endpoint`
+   - Or: `http://your-domain.com:5000/api-endpoint`
+
+2. **What "secret" value should we send your API?**
+   - Use the same secret value you configured in your `.env` file
+   - This is the `SECRET` environment variable
+   - Keep it consistent with what your API expects
+
+3. **What is the GitHub home page URL of your repo?**
+   - Format: `https://github.com/{username}/{repo-name}`
+   - Example: `https://github.com/23f2005217/project1-tds-t3-2025`
+   - **Important**: Make your repository **PUBLIC** by the deadline
+   - If concerned about copying, you can keep it private during development
+
+![Submission Form](.github/assets/g_form.png)
+
+### Before Submitting
+
+Checklist:
+- [ ] API is deployed and accessible at the provided URL
+- [ ] `/health` endpoint returns `{"status": "healthy"}`
+- [ ] `/api-endpoint` accepts POST requests with proper authentication
+- [ ] Repository is PUBLIC on GitHub (or will be by deadline)
+- [ ] All environment variables are properly configured as secrets
+- [ ] Test with a sample request to ensure everything works
+
+### Testing Your Deployment
+
+Test your deployed API before submitting:
+
+```bash
+curl https://your-deployment-url.hf.space/health
+
+curl https://your-deployment-url.hf.space/api-endpoint \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "secret": "your_secret_here",
+    "task": "test-deployment",
+    "round": 1,
+    "nonce": "test-123",
+    "brief": "Create a simple test page",
+    "checks": [],
+    "evaluation_url": "https://httpbin.org/post"
+  }'
+```
+
 ## Support
 
 For issues or questions:
