@@ -27,13 +27,13 @@ def handle_request():
         if not is_valid:
             return jsonify({"status": "error", "message": message}), 400
 
-        email = data["email"]
-        task = data["task"]
-        round_num = data["round"]
-        nonce = data["nonce"]
-        brief = data["brief"]
-        checks = data["checks"]
-        evaluation_url = data["evaluation_url"]
+        email = data.get("email", "")
+        task = data.get("task", "")
+        round_num = data.get("round", 1)
+        nonce = data.get("nonce", "")
+        brief = data.get("brief", "")
+        checks = data.get("checks", [])
+        evaluation_url = data.get("evaluation_url", "")
         attachments = data.get("attachments", [])
 
         print(f"Processing request for {email}, task: {task}, round: {round_num}")

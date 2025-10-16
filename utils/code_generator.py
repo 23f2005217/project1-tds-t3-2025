@@ -1,140 +1,20 @@
 from typing import Dict, Optional
-import base64
 
-from .config import get_openai_client
+from .config import get_openai_client, get_fallback_client
+from .file_handler import process_all_attachments
 
 
 def generate_app_code(
     brief: str,
-    checks: list,
+    checks: list = [],
     attachments: Optional[list] = None,
     existing_code: Optional[str] = None,
     round_num: int = 1,
 ) -> Dict[str, str]:
     client = get_openai_client()
 
-    attachments_info = ""
-    if attachments:
-        attachments_info = "\n\nAttachments (data URIs to embed):\n"
-        for att in attachments:
-            if isinstance(att, str):
-                attachments_info += f"- {att[:100]}...\n"
-                continue
-            
-            if not isinstance(att, dict):
-                continue
-            
-            name = att.get("name", att.get("filename", "unknown"))
-            url = att.get("url", att.get("data", att.get("content", "")))
-            
-            if not url and "path" in att:
-                try:
-                    with open(att["path"], 'r', encoding='utf-8', errors='ignore') as f:
-                        url = f.read()
-                except Exception:
-                    pass
-            
-            if url:
-                attachments_info += f"- {name}: {url[:100]}...\n"
-            else:
-                attachments_info += f"- {name}: [no content]\n"
-                continue
-            
-            if name.lower().endswith(('.txt', '.csv', '.tsv', '.log', '.md', '.json', '.xml', '.yaml', '.yml', '.ini', '.conf')):
-                try:
-                    decoded_data = None
-                    
-                    if isinstance(url, bytes):
-                        decoded_data = url
-                    elif url.startswith('data:'):
-                        parts = url.split(',', 1)
-                        if len(parts) == 2:
-                            if 'base64' in parts[0]:
-                                decoded_data = base64.b64decode(parts[1])
-                            else:
-                                decoded_data = parts[1].encode('utf-8')
-                    elif url.startswith(('http://', 'https://')):
-                        attachments_info += "  [Remote file - preview not available]\n"
-                        continue
-                    else:
-                        decoded_data = url.encode('utf-8')
-                    
-                    if decoded_data:
-                        text_content = decoded_data.decode('utf-8', errors='ignore')
-                        lines = text_content.splitlines()
-                        first_5_lines = lines[:5]
-                        
-                        if first_5_lines:
-                            attachments_info += f"\n  First 5 lines of {name}:\n"
-                            for i, line in enumerate(first_5_lines, 1):
-                                line_preview = line[:200] if len(line) > 200 else line
-                                attachments_info += f"  {i}. {line_preview}\n"
-                        else:
-                            attachments_info += "\n  [Empty file]\n"
-                except Exception:
-                    attachments_info += f"\n  Could not read preview of {name}\n"
-            
-            elif name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif')):
-                try:
-                    image_info = f"\n  Image file: {name}\n"
-                    
-                    if url.startswith('data:image/'):
-                        mime_type = url.split(';')[0].replace('data:', '')
-                        image_info += f"  Type: {mime_type}\n"
-                        image_info += "  Format: Data URI (embedded, ready to use in <img> tag)\n"
-                        
-                        if 'base64' in url:
-                            try:
-                                base64_data = url.split(',', 1)[1]
-                                decoded_size = len(base64.b64decode(base64_data))
-                                image_info += f"  Size: ~{decoded_size / 1024:.1f} KB\n"
-                            except Exception:
-                                pass
-                        
-                        image_info += f"  Usage: <img src=\"{{{{ data URI }}}}\" alt=\"{name}\">\n"
-                        image_info += "  Note: Full data URI is included in attachment - use it directly in HTML\n"
-                    
-                    elif url.startswith(('http://', 'https://')):
-                        image_info += "  Type: Remote URL\n"
-                        image_info += f"  URL: {url[:100]}{'...' if len(url) > 100 else ''}\n"
-                        image_info += f"  Usage: <img src=\"{url}\" alt=\"{name}\">\n"
-                    
-                    elif isinstance(url, bytes) or (isinstance(url, str) and len(url) > 1000):
-                        image_info += "  Type: Binary/Base64 data\n"
-                        image_info += "  Note: Convert to data URI for use in HTML\n"
-                    
-                    else:
-                        image_info += "  Type: File path or reference\n"
-                        image_info += f"  Path: {url}\n"
-                    
-                    attachments_info += image_info
-                except Exception:
-                    attachments_info += f"\n  Image file detected but could not extract details: {name}\n"
-            
-            elif name.lower().endswith(('.mp4', '.webm', '.ogg', '.mov', '.avi')):
-                attachments_info += f"\n  Video file: {name}\n"
-                if url.startswith('data:video/'):
-                    attachments_info += "  Format: Data URI (use in <video> tag)\n"
-                elif url.startswith(('http://', 'https://')):
-                    attachments_info += "  Format: Remote URL\n"
-                attachments_info += "  Usage: <video src=\"{{ URL }}\" controls></video>\n"
-            
-            elif name.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.flac')):
-                attachments_info += f"\n  Audio file: {name}\n"
-                if url.startswith('data:audio/'):
-                    attachments_info += "  Format: Data URI (use in <audio> tag)\n"
-                elif url.startswith(('http://', 'https://')):
-                    attachments_info += "  Format: Remote URL\n"
-                attachments_info += "  Usage: <audio src=\"{{ URL }}\" controls></audio>\n"
-            
-            elif name.lower().endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx')):
-                attachments_info += f"\n  Document file: {name}\n"
-                if url.startswith(('http://', 'https://')):
-                    attachments_info += "  Format: Remote URL\n"
-                    attachments_info += f"  Usage: <a href=\"{url}\" download>Download {name}</a>\n"
-                elif url.startswith('data:'):
-                    attachments_info += "  Format: Data URI (use in download link)\n"
-                    attachments_info += f"  Usage: <a href=\"{{{{ data URI }}}}\" download=\"{name}\">Download</a>\n"
+    attachments_info = process_all_attachments(attachments)
+    checks = checks or []
 
     existing_context = ""
     if existing_code and round_num > 1:
@@ -162,19 +42,33 @@ Critical Requirements:
 
 Return ONLY the complete HTML code with no explanations, no comments, no markdown formatting."""
 
-    response = client.chat.completions.create(
-        model="gemini-2.5-flash",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert web developer. Generate clean, functional, production-ready HTML applications that pass all specified checks.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.7,
-    )
-
-    html_content = response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="gemini-2.5-flash",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert web developer. Generate clean, functional, production-ready HTML applications that pass all specified checks.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        html_content = response.choices[0].message.content
+    except Exception:
+        fallback_client = get_fallback_client()
+        response = fallback_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert web developer. Generate clean, functional, production-ready HTML applications that pass all specified checks.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        html_content = response.choices[0].message.content
 
     if html_content is None:
         print("No HTML content generated.")
@@ -208,19 +102,33 @@ The README should include:
 
 Make it clear, professional, and well-structured with proper markdown formatting."""
 
-    response = client.chat.completions.create(
-        model="gemini-2.5-flash",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert at writing professional technical documentation.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.7,
-    )
-
-    readme_content = response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="gemini-2.5-flash",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert at writing professional technical documentation.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        readme_content = response.choices[0].message.content
+    except Exception:
+        fallback_client = get_fallback_client()
+        response = fallback_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert at writing professional technical documentation.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        readme_content = response.choices[0].message.content
 
     if readme_content is None:
         print("No README content generated.")

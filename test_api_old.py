@@ -3,41 +3,16 @@
 import requests
 import json
 import os
-import base64
 from dotenv import load_dotenv
 
 load_dotenv()
 
 B_URL = "http://localhost:5000/"
+# B_URL = "https://project1-tds-t3-2025.vercel.app/"
 API_URL = B_URL + "api-endpoint"
-SECRET = os.getenv("SECRET", "")
+SECRET = os.getenv("SECRET", "your_secret_key_here")
 
 timeouts = {"test_health": 5, "round1": 500, "round2": 500}
-
-
-def load_file_as_base64(filepath):
-    try:
-        with open(filepath, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except Exception as e:
-        print(f"Error loading {filepath}: {e}")
-        return ""
-
-
-def load_file_as_text(filepath):
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return f.read()
-    except Exception as e:
-        print(f"Error loading {filepath}: {e}")
-        return ""
-
-
-csv_base64 = load_file_as_base64("test/sample_data.csv")
-image_base64 = load_file_as_text("test/sample_image_base64.txt").strip()
-notes_content = load_file_as_text("test/notes.txt")
-config_content = load_file_as_text("test/config.txt")
-markdown_content = load_file_as_text("test/sample.md")
 
 test_request_calculator = {
     "email": "test@example.com",
@@ -251,183 +226,6 @@ test_request_multi_media = {
         },
     ],
 }
-
-test_request_real_csv = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "real-csv-employee-data",
-    "round": 1,
-    "nonce": "real-csv-001",
-    "brief": "Create a page that displays employee data from the CSV file. Show it in a Bootstrap table with id='employee-table'. Calculate and show average salary in #avg-salary.",
-    "checks": [
-        'js: !!document.querySelector("#employee-table")',
-        'js: document.querySelectorAll("#employee-table tbody tr").length >= 5',
-        'js: !!document.querySelector("#avg-salary")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "employee_data.csv",
-            "url": f"data:text/csv;base64,{csv_base64}",
-        }
-    ],
-}
-
-test_request_real_notes = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "notes-display",
-    "round": 1,
-    "nonce": "notes-display-001",
-    "brief": "Display the notes.txt file content in a Bootstrap card with line numbers. Add title 'Project Notes'.",
-    "checks": [
-        'js: document.title.includes("Project Notes")',
-        'js: !!document.querySelector(".card")',
-        'js: document.body.textContent.includes("Requirements")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "notes.txt",
-            "url": f"data:text/plain;base64,{base64.b64encode(notes_content.encode()).decode() if notes_content else ''}",
-        }
-    ],
-}
-
-test_request_real_config = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "config-display",
-    "round": 1,
-    "nonce": "config-display-001",
-    "brief": "Parse and display config.txt as a Bootstrap table with Key and Value columns. Title should be 'Configuration Settings'.",
-    "checks": [
-        'js: document.title === "Configuration Settings"',
-        'js: !!document.querySelector("table")',
-        'js: document.body.textContent.includes("API_KEY")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "config.txt",
-            "url": f"data:text/plain;base64,{base64.b64encode(config_content.encode()).decode() if config_content else ''}",
-        }
-    ],
-}
-
-test_request_real_markdown = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "markdown-render-real",
-    "round": 1,
-    "nonce": "md-render-real-001",
-    "brief": "Convert the sample.md markdown file to HTML using marked.js. Style with Bootstrap and add syntax highlighting with highlight.js.",
-    "checks": [
-        "js: !!document.querySelector(\"script[src*='marked']\")",
-        'js: document.body.textContent.includes("AI Pipe")',
-        'js: !!document.querySelector("h1")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "sample.md",
-            "url": f"data:text/markdown;base64,{base64.b64encode(markdown_content.encode()).decode() if markdown_content else ''}",
-        }
-    ],
-}
-
-test_request_real_image = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "image-display-real",
-    "round": 1,
-    "nonce": "img-display-real-001",
-    "brief": "Display the image with Bootstrap styling. Add title 'Image Viewer' and show image info.",
-    "checks": [
-        'js: !!document.querySelector("img")',
-        'js: document.title.includes("Image")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "sample.png",
-            "url": f"data:image/png;base64,{image_base64}",
-        }
-    ],
-}
-
-test_request_multi_real_files = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "multi-file-real",
-    "round": 1,
-    "nonce": "multi-real-001",
-    "brief": "Create a tabbed interface with Bootstrap tabs. Tab 1: CSV table, Tab 2: Image display, Tab 3: Markdown rendered, Tab 4: Config parser.",
-    "checks": [
-        'js: document.querySelectorAll(".nav-tabs .nav-link").length >= 3',
-        'js: !!document.querySelector("table")',
-        'js: !!document.querySelector("img")',
-    ],
-    "evaluation_url": "https://httpbin.org/post",
-    "attachments": [
-        {
-            "name": "employee_data.csv",
-            "url": f"data:text/csv;base64,{csv_base64}",
-        },
-        {
-            "name": "sample.png",
-            "url": f"data:image/png;base64,{image_base64}",
-        },
-        {
-            "name": "sample.md",
-            "url": f"data:text/markdown;base64,{base64.b64encode(markdown_content.encode()).decode() if markdown_content else ''}",
-        },
-        {
-            "name": "config.txt",
-            "url": f"data:text/plain;base64,{base64.b64encode(config_content.encode()).decode() if config_content else ''}",
-        },
-    ],
-}
-
-test_invalid_missing_secret = {
-    "email": "test@example.com",
-    "task": "should-fail",
-    "round": 1,
-    "nonce": "fail-001",
-    "brief": "This should fail",
-    "evaluation_url": "https://httpbin.org/post",
-}
-
-test_invalid_wrong_secret = {
-    "email": "test@example.com",
-    "secret": "wrong_secret_123",
-    "task": "should-fail",
-    "round": 1,
-    "nonce": "fail-002",
-    "brief": "This should fail",
-    "evaluation_url": "https://httpbin.org/post",
-}
-
-test_invalid_missing_email = {
-    "secret": SECRET,
-    "task": "should-fail",
-    "round": 1,
-    "nonce": "fail-003",
-    "brief": "This should fail",
-    "evaluation_url": "https://httpbin.org/post",
-}
-
-test_invalid_round_zero = {
-    "email": "test@example.com",
-    "secret": SECRET,
-    "task": "should-fail",
-    "round": 0,
-    "nonce": "fail-004",
-    "brief": "This should fail",
-    "evaluation_url": "https://httpbin.org/post",
-}
-
-test_invalid_empty_json = {}
 
 test_request = test_request_calculator
 

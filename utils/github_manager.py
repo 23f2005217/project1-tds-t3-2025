@@ -341,6 +341,10 @@ def upsert_pages_index(
 
 def update_readme(repo, task: str, brief: str, repo_url: str, pages_url: str):
     readme_content = generate_readme_content(task, brief, repo_url, pages_url)
+    
+    if not readme_content:
+        print("Warning: No README content generated, skipping update")
+        return
 
     try:
         readme_file = repo.get_contents("README.md")
@@ -350,8 +354,11 @@ def update_readme(repo, task: str, brief: str, repo_url: str, pages_url: str):
             content=readme_content,
             sha=readme_file.sha,
         )
-    except GithubException:
-        repo.create_file(path="README.md", message="Add README", content=readme_content)
+    except GithubException as e:
+        if e.status == 404:
+            repo.create_file(path="README.md", message="Add README", content=readme_content)
+        else:
+            print(f"Warning: Could not update README: {str(e)}")
 
 
 def test_github_manager():

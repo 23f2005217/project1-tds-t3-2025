@@ -12,7 +12,11 @@ SECRET = os.getenv("SECRET", "")
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME", "")
 PORT = int(os.getenv("PORT", 5000))
 
+FALLBACK_API_KEY = os.getenv("AIPIPE_AKI_KEY", "")
+FALLBACK_BASE_URL = "https://aipipe.org/openai/v1"
+
 _openai_client = None
+_fallback_client = None
 _github_client = None
 
 
@@ -68,6 +72,16 @@ def get_openai_client():
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         )
     return _openai_client
+
+
+def get_fallback_client():
+    global _fallback_client
+    if _fallback_client is None:
+        _fallback_client = OpenAI(
+            api_key=FALLBACK_API_KEY,
+            base_url=FALLBACK_BASE_URL,
+        )
+    return _fallback_client
 
 
 def get_github_client():
