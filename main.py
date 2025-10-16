@@ -123,10 +123,8 @@ def handle_request():
         if not notify_result:
             response_data["warning"] = "Failed to notify evaluation API after retries"
 
-        # Log to Google Sheets for evidence
         try:
             send_evidence_log(data, response_data, request.remote_addr, request.url)
-            print("Logged interaction to Google Sheets")
         except Exception as log_error:
             print(f"Warning: Failed to log to Google Sheets: {str(log_error)}")
 
@@ -157,13 +155,12 @@ def handle_request():
                 }
             )
 
-        # Log error to Google Sheets for evidence
         try:
             if data:
                 send_evidence_log(data, error_response, request.remote_addr, request.url)
-                print("Logged error interaction to Google Sheets")
+                print("logged for evidence")
         except Exception as log_error:
-            print(f"Warning: Failed to log error to Google Sheets: {str(log_error)}")
+            print(f"logged for evidence failed: {str(log_error)}")
 
         return jsonify(error_response), 500
 

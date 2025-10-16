@@ -4,6 +4,9 @@ import requests
 import json
 import os
 import base64
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Tuple
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +14,51 @@ load_dotenv()
 B_URL = "http://localhost:5000/"
 API_URL = B_URL + "api-endpoint"
 SECRET = os.getenv("SECRET", "")
+
+# Dummy evaluation server configuration (used when running tests locally)
+DUMMY_EVAL_PORT = 9001
+DUMMY_EVAL_URL = f"http://localhost:{DUMMY_EVAL_PORT}/post"
+
+
+class _DummyEvalHandler(BaseHTTPRequestHandler):
+    def _send_json(self, code: int, obj: dict):
+        body = json.dumps(obj).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        # Read and discard body (we could inspect it for debugging)
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except Exception:
+            length = 0
+        if length:
+            _ = self.rfile.read(length)
+
+        print(f"Dummy evaluation endpoint received POST {self.path}")
+        # Return 200 OK with a simple JSON body to simulate acceptance
+        self._send_json(200, {"status": "accepted"})
+
+    def log_message(self, format: str, *args) -> None:  # silence default logging
+        return
+
+
+def start_dummy_evaluation_server(port: int = DUMMY_EVAL_PORT) -> Tuple[ThreadingHTTPServer, threading.Thread]:
+    server = ThreadingHTTPServer(("localhost", port), _DummyEvalHandler)
+
+    def _serve():
+        print(f"Starting dummy evaluation server on http://localhost:{port}/post")
+        try:
+            server.serve_forever()
+        except Exception:
+            pass
+
+    t = threading.Thread(target=_serve, daemon=True)
+    t.start()
+    return server, t
 
 timeouts = {"test_health": 5, "round1": 500, "round2": 500}
 
@@ -778,6 +826,17 @@ def main():
     print("This will create a real GitHub repository and may take 30-60 seconds.")
     print("Press Enter to continue, or Ctrl+C to cancel...")
     try:
+        # Start local dummy evaluation server and point evaluation_url to it
+        try:
+            server, server_thread = start_dummy_evaluation_server()
+            # Override evaluation_url on the selected request so the notifier posts locally
+            if isinstance(selected_request, dict):
+                selected_request["evaluation_url"] = DUMMY_EVAL_URL
+        except Exception as e:
+            print(f"Warning: could not start dummy evaluation server: {e}")
+            server = None
+            server_thread = None
+
         input()
     except KeyboardInterrupt:
         print("\n\nCancelled.")
@@ -826,6 +885,16 @@ def main():
     print("\n" + "=" * 60)
     print("Test suite completed!")
     print("=" * 60)
+    # Shutdown dummy evaluation server if started
+    try:
+        if 'server' in locals() and server is not None:
+            print("Shutting down dummy evaluation server...")
+            try:
+                server.shutdown()
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
