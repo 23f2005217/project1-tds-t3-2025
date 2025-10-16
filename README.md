@@ -1,6 +1,6 @@
 ---
 title: LLM Code Deployment System
-emoji: 🚀
+emoji: 🐋
 colorFrom: blue
 colorTo: green
 sdk: docker
@@ -58,13 +58,17 @@ cp .env.example .env
 Edit `.env` and set:
 
 - `GITHUB_TOKEN`: Your GitHub Personal Access Token
-  - Create at: <https://github.com/settings/personal-access-tokens/new>  - Required scopes: `repo`, `workflow`, `admin:repo_hook`
+  - Create at: <https://github.com/settings/personal-access-tokens/new>
+  - Required scopes: `repo`, `workflow`, `admin:repo_hook`
 - `GITHUB_USERNAME`: Your GitHub username
 - `OPENAI_API_KEY`: Your GEMINI API key
   - Get from: <https://aistudio.google.com/api-keys>
   - Watch how to create one: <https://youtu.be/6BRyynZkvf0>
 - `SECRET`: Your secret key for request verification
 - `PORT`: (Optional) Server port, defaults to 5000
+- `AIPIPE_AKI_KEY`: (Optional) AI Pipe API token for fallback when Gemini API fails
+  - Generate from: <https://aipipe.org/login>
+  - Login with Google account to get your token
 
 ### 4. GitHub Personal Access Token Setup
 
@@ -193,23 +197,135 @@ vercel env add SECRET
 - Production URL will be provided after deployment
 - Vercel provides automatic HTTPS and CDN
 
-### Hugging Face Spaces Configuration
+### Deploy to Hugging Face Spaces
 
-You can configure your Hugging Face Space by adding a YAML block to the top of your `README.md` file. Here are some of the key parameters:
+Hugging Face Spaces provides free hosting for ML and web applications using Docker containers.
 
-*   **`title`**: Display title for the Space.
-*   **`emoji`**: Space emoji.
-*   **`colorFrom`**, **`colorTo`**: Colors for the thumbnail gradient.
-*   **`sdk`**: Can be `gradio`, `docker`, or `static`.
-*   **`python_version`**: Python version to use (e.g., `3.9`).
-*   **`sdk_version`**: Version of the SDK to use (e.g., `gradio` version).
-*   **`suggested_hardware`**: Suggested hardware for the Space (e.g., `cpu-basic`, `t4-small`).
-*   **`suggested_storage`**: Suggested permanent storage (`small`, `medium`, `large`).
-*   **`app_file`**: Path to the main application file.
-*   **`app_build_command`**: Command to run to generate static files (e.g., `npm run build`).
-*   **`secrets`**: A list of secrets to be passed as environment variables.
+#### Method 1: Using Git (Recommended)
 
-For a full list of options, see the [Hugging Face Spaces Configuration Reference](https://huggingface.co/docs/hub/spaces-config-reference).
+##### Step 1: Generate Hugging Face Token
+
+1. Go to [Hugging Face Tokens](https://huggingface.co/settings/tokens)
+2. Click **"New token"**
+3. Name it (e.g., "deployment-token")
+4. Select **"Write"** permission
+5. Click **"Generate"** and copy the token
+
+##### Step 2: Create New Space
+
+1. Go to [Create New Space](https://huggingface.co/new-space?sdk=docker)
+2. Choose a **Space name** (e.g., "llm-code-deployment")
+3. Select **"Docker"** as SDK
+4. Choose visibility (Public/Private)
+5. Click **"Create Space"**
+
+##### Step 3: Configure Space Secrets
+
+1. Go to your Space settings: `https://huggingface.co/spaces/{username}/{spacename}/settings`
+2. Scroll down to **"Repository secrets"** section
+3. Add the following secrets one by one:
+   - `GITHUB_TOKEN`: Your GitHub Personal Access Token
+   - `GITHUB_USERNAME`: Your GitHub username
+   - `OPENAI_API_KEY`: Your Gemini API key
+   - `SECRET`: Your secret key for request verification
+   - `AIPIPE_AKI_KEY`: Your AI Pipe API key (fallback)
+
+![Space Secrets Configuration](.github/assets/space_secret.png)
+
+##### Step 4: Deploy Using Git
+
+Add Hugging Face remote and push:
+
+```bash
+git remote add hf https://huggingface.co/spaces/{username}/{spacename}
+git add .
+git commit -m "Deploy to Hugging Face Spaces"
+git push hf main
+```
+
+If you encounter authentication issues, use your token:
+
+```bash
+git remote set-url hf https://{username}:{your_hf_token}@huggingface.co/spaces/{username}/{spacename}
+git push hf main
+```
+
+#### Method 2: Using Hugging Face CLI
+
+##### Step 1: Install Hugging Face CLI
+
+```bash
+pip install huggingface_hub
+```
+
+##### Step 2: Login
+
+```bash
+huggingface-cli login
+```
+
+Enter your Hugging Face token when prompted.
+
+##### Step 3: Upload to Space
+
+```bash
+huggingface-cli upload {username}/{spacename} . --repo-type=space
+```
+
+#### Verify Deployment
+
+1. Go to `https://huggingface.co/spaces/{username}/{spacename}`
+2. Wait for the build to complete (usually 2-5 minutes)
+3. Once running, your API will be available at:
+   - `https://{username}-{spacename}.hf.space/api-endpoint`
+   - `https://{username}-{spacename}.hf.space/health`
+
+#### Space Configuration
+
+The Space is configured via the YAML frontmatter in README.md:
+
+```yaml
+---
+title: LLM Code Deployment System
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: docker
+python_version: "3.13"
+app_file: main.py
+pinned: false
+---
+```
+
+Key parameters:
+- **`sdk: docker`**: Uses the Dockerfile for deployment
+- **`python_version`**: Python version (informational)
+- **`app_file`**: Main application file
+- **`title`** and **`emoji`**: Display information
+
+For more configuration options, see [Hugging Face Spaces Config Reference](https://huggingface.co/docs/hub/spaces-config-reference).
+
+#### Troubleshooting Spaces Deployment
+
+**Build Fails:**
+- Check Docker logs in the Space's "Logs" tab
+- Verify all files are committed and pushed
+- Ensure requirements.txt is present and valid
+
+**App Not Starting:**
+- Check that port 5000 is exposed in Dockerfile
+- Verify environment secrets are set correctly
+- Review application logs in Space dashboard
+
+**Secrets Not Working:**
+- Ensure secret names match exactly (case-sensitive)
+- Restart the Space after adding secrets
+- Check that secrets are in the correct format
+
+**Git Push Fails:**
+- Verify you have write access to the Space
+- Check your token has "Write" permission
+- Try re-authenticating with `huggingface-cli login`
 
 ### API Endpoints
 
@@ -292,85 +408,192 @@ curl http://localhost:5000/api-endpoint \
 
 ### Core Components
 
-1. **Request Handler** (`handle_request`):
-   - Validates incoming requests
-   - Orchestrates the entire build/revise workflow
-   - Returns appropriate HTTP responses
+#### 1. Configuration Module (`utils/config.py`)
+- **Environment Management**: Loads and validates configuration from `.env`
+- **API Client Initialization**: 
+  - Primary: Gemini API via `get_openai_client()`
+  - Fallback: AI Pipe API via `get_fallback_client()`
+- **GitHub Client**: Authenticates and manages GitHub API access
+- **Config Validation**: Ensures all required credentials are present
 
-2. **Secret Verification** (`verify_secret`):
-   - Ensures requests are authenticated
-   - Prevents unauthorized access
+#### 2. Request Handler (`main.py`)
+- **Flask API Endpoint**: `/api-endpoint` for processing requests
+- **Request Validation**: Uses `validate_request()` to verify required fields
+- **Secret Verification**: Authenticates requests using shared secret
+- **Step-by-Step Processing**: Orchestrates the entire workflow with error tracking
+- **Health Check**: `/health` endpoint for monitoring
 
-3. **LLM Code Generator** (`generate_app_code`):
-   - Uses OpenAI GPT-4o-mini to generate HTML/CSS/JS applications
-   - Includes embedded styles and scripts for single-file deployment
-   - Considers brief requirements and evaluation checks
+#### 3. Validation Module (`utils/validation.py`)
+- **Request Validation**: Checks for required fields (email, secret, round, nonce, brief, evaluation_url)
+- **Type Checking**: Validates data types (round must be int ≥ 1, attachments must be list)
+- **Secret Verification**: Compares provided secret with configured secret
+- **Good-to-have Fields**: Warns about missing optional fields (task, checks)
 
-4. **GitHub Repository Manager** (`create_or_update_repo`):
-   - Creates new repositories for round 1
-   - Updates existing repositories for round 2+
-   - Adds MIT LICENSE automatically
-   - Enables GitHub Pages on main branch
+#### 4. File Handler (`utils/file_handler.py`)
+- **Multi-Format Support**: Handles text, CSV, JSON, markdown, images, videos, audio, documents
+- **Smart Content Detection**: Sends full content (≤20,000 chars) or preview based on size
+- **Encoding Support**: Multiple encoding fallbacks (UTF-8, Latin-1, CP1252, ISO-8859-1, ASCII)
+- **Base64 Decoding**: Robust decoding with automatic padding correction
+- **Data URI Processing**: Extracts MIME types, decodes content, generates usage examples
+- **File Type Detection**: Identifies text files, images, videos, audio, documents
+- **Conversion Flags**: Marks files needing conversion (.md, .docx → HTML)
 
-5. **README Generator** (`generate_readme`):
-   - Uses LLM to create professional documentation
-   - Includes project description, usage, and technical details
+#### 5. Code Generator (`utils/code_generator.py`)
+- **LLM Integration**: 
+  - Primary: Gemini 2.5 Flash model
+  - Fallback: GPT-4 via AI Pipe (automatic failover)
+- **Attachment Processing**: Uses file_handler to process all attachment types
+- **Prompt Engineering**: Creates detailed prompts with brief, checks, and attachment info
+- **Round Support**: Handles both new generation and code updates
+- **Content Extraction**: Removes markdown code blocks from LLM responses
+- **README Generation**: Creates professional documentation using LLM
 
-6. **Evaluation Notifier** (`notify_evaluation_api`):
-   - Sends repository details to evaluation URL
-   - Implements exponential backoff (1, 2, 4, 8 seconds)
-   - Retries up to 5 times on failure
+#### 6. GitHub Manager (`utils/github_manager.py`)
+- **Repository Operations**:
+  - Creates new repositories for round 1
+  - Updates existing repositories for round 2+
+  - Retrieves existing code from previous rounds
+- **File Management**:
+  - Creates/updates `index.html` with generated code
+  - Adds MIT LICENSE automatically
+  - Generates and updates README.md
+- **GitHub Pages Setup**:
+  - Enables Pages on main branch
+  - Configures deployment source
+  - Requests Pages build with retry logic
+  - Handles race conditions and API errors
+- **Error Handling**: Comprehensive retry logic for API failures
 
-### Workflow
+#### 7. API Notifier (`utils/api_notifier.py`)
+- **Evaluation Notification**: POSTs results to evaluation URL
+- **Retry Logic**: Exponential backoff (1, 2, 4, 8, 16 seconds)
+- **Timeout Handling**: 30-second timeout per request
+- **Error Recovery**: Up to 5 retry attempts
+- **Status Reporting**: Logs all attempts and final status
+
+### System Workflow
 
 ```
-┌─────────────────┐
-│ Incoming POST   │
-│    Request      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Validate & Auth │
-│  (verify secret)│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Generate Code   │
-│   with LLM      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Create/Update   │
-│  GitHub Repo    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Enable GitHub   │
-│     Pages       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Generate README │
-│  & Update Repo  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Notify Eval API │
-│  (with retries) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Return Success  │
-│    Response     │
-└─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     Incoming POST Request                   │
+│                      /api-endpoint                          │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Request Validation & Authentication            │
+│  - Check required fields (email, secret, round, etc.)       │
+│  - Verify secret matches configured value                   │
+│  - Validate data types and constraints                      │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Process Attachments                        │
+│  - Load files from data URIs, URLs, or paths                │
+│  - Decode base64 with multi-encoding support                │
+│  - Extract metadata (MIME types, sizes, previews)           │
+│  - Format for LLM prompt (full content or preview)          │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│            Fetch Existing Code (Round 2+)                   │
+│  - Query GitHub for repository from previous round          │
+│  - Retrieve index.html content                              │
+│  - Include in prompt for code modification                  │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                Generate Code with LLM                       │
+│  Primary: Gemini 2.5 Flash                                  │
+│  ┌──────────────────────────────────────────┐               │
+│  │ Prompt includes:                         │               │
+│  │ - Brief and requirements                 │               │
+│  │ - Evaluation checks                      │               │
+│  │ - Attachment information                 │               │
+│  │ - Existing code (if round 2+)            │               │
+│  └──────────────────────────────────────────┘               │
+│         │                                                   │
+│         │ On Failure                                        │
+│         ▼                                                   │
+│  Fallback: GPT-4 via AI Pipe                                │
+│  ┌──────────────────────────────────────────┐               │
+│  │ Same prompt with alternative API         │              │
+│  └──────────────────────────────────────────┘               │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Create/Update GitHub Repository                │
+│  Round 1:                          Round 2+:                │
+│  - Create new repository           - Get existing repo      │
+│  - Add LICENSE file                - Update index.html      │
+│  - Create initial README           - Increment version      │
+│  Round-independent:                                         │
+│  - Upload/update index.html with generated code             │
+│  - Commit changes with descriptive message                  │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Enable GitHub Pages                        │
+│  - Check if Pages exists (GET /repos/{owner}/{repo}/pages)  │
+│  - Create Pages if not exists (POST)                        │
+│  - Update Pages config (PATCH)                              │
+│  - Request Pages build                                      │
+│  - Retry on failures with exponential backoff               │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Generate & Update README                  │
+│  - Create professional README using LLM                     │
+│  - Include project description, features, usage             │
+│  - Add repository and Pages URLs                            │
+│  - Update or create README.md in repository                 │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Fetch Latest Commit SHA                    │
+│  - Query repository for recent commits                      │
+│  - Extract SHA from latest commit                           │
+│  - Use for evaluation notification                          │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Notify Evaluation API                          │
+│  - POST to evaluation_url with:                             │
+│    * email, task, round, nonce                              │
+│    * repo_url, pages_url, commit_sha                        │
+│  - Retry up to 5 times with exponential backoff             │
+│  - Log success/failure status                               │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Return Success Response                    │
+│  {                                                          │
+│    "status": "success",                                     │
+│    "repo_url": "https://github.com/...",                    │
+│    "pages_url": "https://username.github.io/...",           │
+│    "commit_sha": "abc123..."                                │
+│  }                                                          │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+### Error Handling Strategy
+
+- **Validation Errors**: Return HTTP 400 with specific error message
+- **API Failures**: Automatic failover from Gemini to AI Pipe
+- **GitHub Errors**: Retry logic with exponential backoff
+- **Pages Setup Issues**: Continue with file upload even if Pages config fails
+- **README Failures**: Log warning but continue with deployment
+- **Evaluation API Errors**: Retry multiple times, mark as warning if all fail
+- **Internal Errors**: Return HTTP 500 with error details and step information
 
 ## Round 2 (Revise) Handling
 
@@ -402,10 +625,11 @@ The system automatically handles Round 2 requests:
 Core libraries:
 
 - `flask`: Web framework for API endpoint
-- `openai`: LLM integration for code generation
-- `pygithub`: GitHub API client
-- `requests`: HTTP client for evaluation API
+- `openai`: LLM integration for code generation (supports Gemini and OpenAI-compatible APIs)
+- `pygithub`: GitHub API client for repository management
+- `requests`: HTTP client for evaluation API and GitHub Pages setup
 - `python-dotenv`: Environment variable management
+- `gunicorn`: Production WSGI server (Docker deployment)
 
 ## Limitations & Future Improvements
 
