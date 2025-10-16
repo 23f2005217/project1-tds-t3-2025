@@ -759,4 +759,5 @@ For issues or questions:
 2. Review error messages in console output
 3. Verify all environment variables are set correctly
 4. Ensure GitHub and OpenAI credentials are valid
-5. Check the [evidence dashboard](https://store-evidence.vercel.app/api/logs) for logged requests
+5. Check the [evidence dashboard](https://store-evidence.vercel.app/api/logs) for logged requests#   T D S _ p 1  
+ 
