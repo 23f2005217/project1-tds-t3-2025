@@ -31,10 +31,18 @@ def load_file_as_text(filepath):
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         return ""
-
+    
+def load_files_as_txts(filepath):
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return [line.strip() for line in f if line.strip()]
+    except Exception as e:
+        print(f"Error loading {filepath}: {e}")
+        return []
 
 csv_base64 = load_file_as_base64("test/sample_data.csv")
 image_base64 = load_file_as_text("test/sample_image_base64.txt").strip()
+images_base64 = load_files_as_txts("test/img_base_url_examples.txt")
 notes_content = load_file_as_text("test/notes.txt")
 config_content = load_file_as_text("test/config.txt")
 markdown_content = load_file_as_text("test/sample.md")
@@ -389,6 +397,102 @@ test_request_multi_real_files = {
     ],
 }
 
+# Test case: Large base64 image that should be extracted and uploaded separately
+test_request_large_image = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "large-image-extract-test",
+    "round": 1,
+    "nonce": "large-img-001",
+    "brief": "Create a responsive image gallery that displays the attached logo image. The image should be in an <img> tag with id='main-image', and the page should use Bootstrap for styling. Add a heading 'Product Showcase' with id='page-title'.",
+    "checks": [
+        'js: !!document.querySelector("#main-image")',
+        'js: document.querySelector("#main-image").src.includes(".png") || document.querySelector("#main-image").src.includes("asset")',
+        'js: document.querySelector("#page-title").textContent.includes("Showcase")',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "product-image.png",
+            "url": f"data:image/png;base64,{image_base64}",  # This is a large image that should be extracted
+        }
+    ],
+}
+
+# Test case: Multiple media types (SVG, GIF, video concepts via large base64)
+test_request_mixed_media_types = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "mixed-media-types-test",
+    "round": 1,
+    "nonce": "mixed-media-001",
+    "brief": "Create a multimedia page with Bootstrap. Display the logo image in an <img> tag with id='logo-img', show the banner image with id='banner-img', and add descriptions below each. The page should be responsive and professional-looking.",
+    "checks": [
+        'js: !!document.querySelector("#logo-img")',
+        'js: !!document.querySelector("#banner-img")',
+        'js: document.querySelectorAll("img").length >= 2',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "logo.png",
+            "url": f"data:image/png;base64,{image_base64}",
+        },
+        {
+            "name": "banner.png",
+            "url": f"data:image/png;base64,{image_base64}",  # Reusing same for test
+        },
+    ],
+}
+
+# Test case: Image with CSV data combined
+test_request_image_with_data = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "image-data-combined-test",
+    "round": 1,
+    "nonce": "img-data-001",
+    "brief": "Create a dashboard page with Bootstrap. Top section: Display the company logo (image) with id='company-logo'. Bottom section: Show employee data from CSV in a table with id='employee-table'. Add a heading 'Company Dashboard' with id='dashboard-title'.",
+    "checks": [
+        'js: !!document.querySelector("#company-logo")',
+        'js: !!document.querySelector("#employee-table")',
+        'js: document.querySelectorAll("#employee-table tbody tr").length >= 3',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "company-logo.png",
+            "url": f"data:image/png;base64,{image_base64}",
+        },
+        {
+            "name": "employees.csv",
+            "url": f"data:text/csv;base64,{csv_base64}",
+        },
+    ],
+}
+
+# Test case: URL parameter images - fetches images from URL parameters
+test_request_url_images = {
+    "email": "test@example.com",
+    "secret": SECRET,
+    "task": "url-images-gallery-test",
+    "round": 1,
+    "nonce": "url-img-001",
+    "brief": f"Create an image gallery page that displays images from URLs passed as query parameters. The page should support ?img1=URL, ?img2=URL, ?img3=URL parameters. Use Bootstrap for styling. Display each image in a card with id='image-1', 'image-2', 'image-3'. If no URL parameters are provided, show these default images: {', '.join(images_base64[:3]) if images_base64 else 'placeholder images'}. Add a heading 'Photo Gallery' with id='gallery-title'.",
+    "checks": [
+        'js: !!document.querySelector("#gallery-title")',
+        'js: document.querySelectorAll("img").length >= 1',
+        'js: document.querySelector("img").src.length > 0',
+    ],
+    "evaluation_url": "https://httpbin.org/post",
+    "attachments": [
+        {
+            "name": "image-urls.txt",
+            "url": f"data:text/plain;base64,{base64.b64encode(chr(10).join(images_base64).encode()).decode() if images_base64 else base64.b64encode(b'https://via.placeholder.com/300').decode()}",
+        }
+    ],
+}
+
 test_invalid_missing_secret = {
     "email": "test@example.com",
     "task": "should-fail",
@@ -545,8 +649,12 @@ def select_test_example():
     print("7. File Preview Test (CSV + TXT with first 5 lines preview)")
     print("8. Image Gallery Test (PNG image rendering)")
     print("9. Multi-Media Test (Image + CSV + TXT combined)")
+    print("10. Large Image Extract Test (tests base64 → file upload)")
+    print("11. Mixed Media Types (multiple large images)")
+    print("12. Image + Data Combined (logo + CSV dashboard)")
+    print("13. URL Images Gallery (fetches images from URL parameters)")
     print(
-        "\nSelect an example (1-9), or press Enter for default (Calculator): ", end=""
+        "\nSelect an example (1-13), or press Enter for default (Calculator): ", end=""
     )
 
     try:
@@ -569,6 +677,14 @@ def select_test_example():
             return test_request_image_gallery, "Image Gallery Test"
         elif choice == "9":
             return test_request_multi_media, "Multi-Media Test"
+        elif choice == "10":
+            return test_request_large_image, "Large Image Extract Test"
+        elif choice == "11":
+            return test_request_mixed_media_types, "Mixed Media Types"
+        elif choice == "12":
+            return test_request_image_with_data, "Image + Data Combined"
+        elif choice == "13":
+            return test_request_url_images, "URL Images Gallery"
         else:
             print("Invalid choice, using default (Calculator App)")
             return test_request_calculator, "Calculator App"

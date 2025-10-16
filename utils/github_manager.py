@@ -4,6 +4,7 @@ import time
 from github import GithubException
 from .config import get_github_client, GITHUB_USERNAME, GITHUB_TOKEN
 from .code_generator import generate_readme as generate_readme_content
+from .asset_handler import process_html_assets
 
 
 def get_existing_code(task: str, path: str = "index.html") -> Optional[str]:
@@ -170,6 +171,13 @@ def create_or_update_repo(
     index_content = code_files.get(
         "index.html", "<html><body><h1>Welcome</h1></body></html>"
     )
+
+    print("Processing HTML assets (extracting large base64 data URIs)...")
+    try:
+        index_content = process_html_assets(index_content, repo, round_num)
+    except Exception as e:
+        print(f"Warning: Asset processing failed: {str(e)}")
+        print("Continuing with original HTML (data URIs intact)...")
 
     try:
         upsert_pages_index(

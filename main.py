@@ -8,6 +8,7 @@ from utils import (
     update_readme,
     notify_evaluation_api,
 )
+from utils.evidence import send_evidence_log
 
 app = Flask(__name__)
 
@@ -122,6 +123,13 @@ def handle_request():
         if not notify_result:
             response_data["warning"] = "Failed to notify evaluation API after retries"
 
+        # Log to Google Sheets for evidence
+        try:
+            send_evidence_log(data, response_data, request.remote_addr, request.url)
+            print("Logged interaction to Google Sheets")
+        except Exception as log_error:
+            print(f"Warning: Failed to log to Google Sheets: {str(log_error)}")
+
         return jsonify(response_data), 200
 
     except Exception as e:
@@ -148,6 +156,14 @@ def handle_request():
                     "nonce": data["nonce"],
                 }
             )
+
+        # Log error to Google Sheets for evidence
+        try:
+            if data:
+                send_evidence_log(data, error_response, request.remote_addr, request.url)
+                print("Logged error interaction to Google Sheets")
+        except Exception as log_error:
+            print(f"Warning: Failed to log error to Google Sheets: {str(log_error)}")
 
         return jsonify(error_response), 500
 
