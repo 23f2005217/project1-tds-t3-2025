@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-B_URL = "http://localhost:5000/"
-API_URL = B_URL + "api-endpoint"
+B_URL = "http://localhost:5000"
+API_URL = B_URL + "/api-endpoint"
 SECRET = os.getenv("SECRET", "")
 
 # Dummy evaluation server configuration (used when running tests locally)
@@ -46,7 +46,9 @@ class _DummyEvalHandler(BaseHTTPRequestHandler):
         return
 
 
-def start_dummy_evaluation_server(port: int = DUMMY_EVAL_PORT) -> Tuple[ThreadingHTTPServer, threading.Thread]:
+def start_dummy_evaluation_server(
+    port: int = DUMMY_EVAL_PORT,
+) -> Tuple[ThreadingHTTPServer, threading.Thread]:
     server = ThreadingHTTPServer(("localhost", port), _DummyEvalHandler)
 
     def _serve():
@@ -59,6 +61,7 @@ def start_dummy_evaluation_server(port: int = DUMMY_EVAL_PORT) -> Tuple[Threadin
     t = threading.Thread(target=_serve, daemon=True)
     t.start()
     return server, t
+
 
 timeouts = {"test_health": 5, "round1": 500, "round2": 500}
 
@@ -79,7 +82,8 @@ def load_file_as_text(filepath):
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         return ""
-    
+
+
 def load_files_as_txts(filepath):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -87,6 +91,7 @@ def load_files_as_txts(filepath):
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         return []
+
 
 csv_base64 = load_file_as_base64("test/sample_data.csv")
 image_base64 = load_file_as_text("test/sample_image_base64.txt").strip()
@@ -887,7 +892,7 @@ def main():
     print("=" * 60)
     # Shutdown dummy evaluation server if started
     try:
-        if 'server' in locals() and server is not None:
+        if "server" in locals() and server is not None:
             print("Shutting down dummy evaluation server...")
             try:
                 server.shutdown()
